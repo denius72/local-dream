@@ -188,6 +188,56 @@ internal fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> U
     }
 }
 
+// ----- Reminder before generating ------------------------------------------------------
+
+@Composable
+fun GenerateHintDialog(onCancel: () -> Unit, onGenerate: (dontShowAgain: Boolean) -> Unit) {
+    var dontShowAgain by remember { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onCancel,
+        icon = { Icon(Icons.Default.AutoFixHigh, contentDescription = null) },
+        title = { Text("Before you generate") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "Don't forget to check your prompt and model settings first! " +
+                        "They live behind the gear, right next to the magic button.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Image(
+                    painter = androidx.compose.ui.res.painterResource(io.github.xororz.localdream.R.drawable.canvas_hint_gear),
+                    contentDescription = "The gear button next to the magic button",
+                    contentScale = ContentScale.FillWidth,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp)),
+                )
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { dontShowAgain = !dontShowAgain },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    androidx.compose.material3.Checkbox(checked = dontShowAgain, onCheckedChange = { dontShowAgain = it })
+                    Text("Don't show again", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onGenerate(dontShowAgain) },
+                colors = ButtonDefaults.buttonColors(containerColor = MagicBlue, contentColor = Color.White),
+            ) {
+                Icon(Icons.Default.AutoFixHigh, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Generate")
+            }
+        },
+        dismissButton = { TextButton(onClick = onCancel) { Text("Cancel") } },
+    )
+}
+
 // ----- Colour picker -------------------------------------------------------------
 
 @Composable

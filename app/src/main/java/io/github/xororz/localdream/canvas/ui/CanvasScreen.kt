@@ -121,6 +121,11 @@ class CanvasHost(
     val saveToGallery: suspend (Bitmap) -> Boolean,
 )
 
+/** Process-lifetime flag: "Don't show again" lasts until the app restarts. */
+private object GenerateHintSession {
+    var dismissed = false
+}
+
 private fun newDocument(w: Int, h: Int, base: Bitmap?): CanvasDocument = CanvasDocument(w, h).apply {
     if (base != null) {
         val fitted = if (base.width != w || base.height != h) base.scale(w, h) else base
@@ -166,6 +171,7 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
     var magicSource by remember { mutableStateOf<Bitmap?>(null) }
     var noRoomResult by remember { mutableStateOf<Bitmap?>(null) }
     var busy by remember { mutableStateOf(false) }
+    var showGenerateHint by remember { mutableStateOf(false) }
 
     fun toast(msg: String) = Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
 
@@ -199,7 +205,11 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
         if (isDirty) confirmExit = true else onClose()
     }
 
-    fun runMagic() {
+    fun runMagic(confirmed: Boolean = false) {
+        if (!confirmed && !GenerateHintSession.dismissed) {
+            showGenerateHint = true
+            return
+        }
         editor.commitTransform()
         if (host.isBusy()) {
             toast("A generation is already running")
@@ -401,6 +411,17 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
     }
 
     // ----- Dialogs -----
+
+    if (showGenerateHint) {
+        GenerateHintDialog(
+            onCancel = { showGenerateHint = false },
+            onGenerate = { dontShowAgain ->
+                showGenerateHint = false
+                if (dontShowAgain) GenerateHintSession.dismissed = true
+                runMagic(confirmed = true)
+            },
+        )
+    }
 
     if (showBrushSettings) BrushSettingsDialog(editor) { showBrushSettings = false }
     if (showColorPicker) ColorPickerDialog(editor) { showColorPicker = false }
