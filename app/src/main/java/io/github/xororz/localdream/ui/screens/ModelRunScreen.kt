@@ -973,6 +973,139 @@ fun ModelRunScreen(
         }
     }
 
+    // Bookkeeping for one finished image: history save, result page state.
+    // The generation loops call this as soon as the service reports the
+    // result. They keep running while the app is in the background, where
+    // Compose effects do not, so results are no longer lost when minimized.
+    // The UI effect calls it too; it runs once per bitmap.
+    val lastHandledResult = remember { arrayOfNulls<Bitmap>(1) }
+    fun handleGenerationComplete(state: GenerationState.Complete) {
+        if (lastHandledResult[0] === state.bitmap) return
+        lastHandledResult[0] = state.bitmap
+        intermediateBitmap = null
+        Log.d("ModelRunScreen", "update bitmap")
+
+        state.seed?.let { returnedSeed = it }
+        progress = 0f
+
+        val genTime = generationStartTime?.let { startTime ->
+            val endTime = System.currentTimeMillis()
+            val duration = endTime - startTime
+            when {
+                duration < 1000 -> "${duration}ms"
+
+                duration < 60000 -> String.format(Locale.US, "%.1fs", duration / 1000.0)
+
+                else -> String.format(
+                    Locale.US,
+                    "%dm%ds",
+                    duration / 60000,
+                    (duration % 60000) / 1000,
+                )
+            }
+        }
+
+        val wasUltrafix = pendingUltrafix
+        pendingUltrafix = false
+        val canvasMode = pendingCanvasMode
+        val currentGenerationMode = when {
+            wasUltrafix -> GenerationMode.ULTRAFIX
+
+            canvasMode != null -> canvasMode
+
+            supportsReferenceEditing && (selectedImageUri != null || editReferenceImages.isNotEmpty()) ->
+                GenerationMode.EDIT
+
+            isInpaintMode -> GenerationMode.INPAINT
+
+            selectedImageUri != null -> GenerationMode.IMG2IMG
+
+            else -> GenerationMode.TXT2IMG
+        }
+
+        val newParams = GenerationParameters(
+            steps = generationParamsTmp.steps,
+            cfg = generationParamsTmp.cfg,
+            seed = returnedSeed,
+            prompt = generationParamsTmp.prompt,
+            negativePrompt = generationParamsTmp.negativePrompt,
+            generationTime = genTime,
+            // The result bitmap is the source of truth: SDXL crops a
+            // non-1:1 aspect out of its 1024 canvas, so the requested
+            // size is not what came back. (This used to read the
+            // request for runOnCpu models, which was only ever right
+            // while SD1.5 CPU was the sole CPU format.)
+            width = state.bitmap.width,
+            height = state.bitmap.height,
+            runOnCpu = model?.runOnCpu ?: false,
+            denoiseStrength = generationParamsTmp.denoiseStrength,
+            useOpenCL = generationParamsTmp.useOpenCL,
+            scheduler = generationParamsTmp.scheduler,
+            mode = currentGenerationMode,
+        )
+
+        // Save to disk and update history list. The saved item's id is
+        // forwarded to both the snapshot and the currently-displayed marker
+        // so handleSaveImage can later confirm the user is still looking at
+        // this generation (and not a different history thumbnail).
+        coroutineScope.launch(Dispatchers.IO) {
+            val savedItem = historyManager.saveGeneratedImage(
+                modelId = modelId,
+                bitmap = state.bitmap,
+                params = newParams,
+                mode = currentGenerationMode,
+            )
+            if (savedItem != null) {
+                withContext(Dispatchers.Main) {
+                    // An ultrafix result is a standalone image, not a
+                    // stitchable inpaint patch.
+                    if (!wasUltrafix && canvasMode == null) {
+                        stitchableHistoryIds = setOf(savedItem.id)
+                    }
+                    currentDisplayedHistoryId = savedItem.id
+                }
+            }
+        }
+
+        currentBitmap = state.bitmap
+        generationParams = newParams
+        generationParamsModelId = modelId
+        imageVersion += 1
+
+        if (!wasUltrafix && canvasMode == null) {
+            snapshotIsInpaintMode = isInpaintMode
+            snapshotSelectedImageUri = selectedImageUri
+            snapshotCropRect = cropRect
+            snapshotMaskBitmap = if (isInpaintMode) maskBitmap else null
+            snapshotDrawingOverlayBitmap = drawingOverlayBitmap
+            snapshotHasOriginalImage = hasOriginalImageForStitch
+        }
+        // stitchableHistoryIds / currentDisplayedHistoryId are set once
+        // the DB save above resolves.
+        stitchableHistoryIds = emptySet()
+        currentDisplayedHistoryId = null
+
+        Log.d(
+            "ModelRunScreen",
+            "params update: ${generationParams?.steps}, ${generationParams?.cfg}",
+        )
+
+        generationStartTime = null
+
+        // Let the service stop right away; the page flip is cosmetic and must
+        // not hold the loop (it waits for frames, which pause in background).
+        BackgroundGenerationService.markBitmapConsumed()
+        if (pagerState.currentPage == 0 && !showAdvancedSettings && !showCanvas) {
+            coroutineScope.launch {
+                try {
+                    pagerState.animateScrollToPage(1)
+                } catch (_: kotlinx.coroutines.CancellationException) {
+                    // Interrupted by another scroll; nothing to do.
+                }
+            }
+        }
+    }
+
     // Runs tiled img2img ("ultrafix") over the currently displayed (upscaled)
     // bitmap at its full resolution, using the prompt-page parameters. The
     // base image goes through its own file so a pending img2img selection in
@@ -1053,9 +1186,10 @@ fun ModelRunScreen(
             // Same teardown as the batch loop: wait for the terminal state and
             // the service stop, then clear the running flag so the prompt-page
             // progress card doesn't linger at 0%.
-            BackgroundGenerationService.generationState.first { state ->
+            val ultrafixFinal = BackgroundGenerationService.generationState.first { state ->
                 state is GenerationState.Complete || state is GenerationState.Error
             }
+            (ultrafixFinal as? GenerationState.Complete)?.let { handleGenerationComplete(it) }
             withTimeoutOrNull(5000L) {
                 BackgroundGenerationService.isServiceRunning.first { !it }
             }
@@ -1445,10 +1579,16 @@ fun ModelRunScreen(
                     if (mask != null) putExtra("has_mask", true)
                 }
             }
-            context.startForegroundService(intent)
+            val started = runCatching { context.startForegroundService(intent) }
+            if (started.isFailure) {
+                Log.e("ModelRunScreen", "canvas batch $i could not start", started.exceptionOrNull())
+                failure = started.exceptionOrNull()?.message ?: "service could not start"
+                break
+            }
             val final = BackgroundGenerationService.generationState.first { state ->
                 state is GenerationState.Complete || state is GenerationState.Error
             }
+            (final as? GenerationState.Complete)?.let { handleGenerationComplete(it) }
             when (final) {
                 is GenerationState.Complete -> results += final.bitmap
                 is GenerationState.Error -> failure = final.message
@@ -1679,129 +1819,7 @@ fun ModelRunScreen(
                 }
             }
 
-            is GenerationState.Complete -> {
-                intermediateBitmap = null
-                withContext(Dispatchers.Main) {
-                    Log.d("ModelRunScreen", "update bitmap")
-
-                    state.seed?.let { returnedSeed = it }
-                    progress = 0f
-
-                    val genTime = generationStartTime?.let { startTime ->
-                        val endTime = System.currentTimeMillis()
-                        val duration = endTime - startTime
-                        when {
-                            duration < 1000 -> "${duration}ms"
-
-                            duration < 60000 -> String.format(Locale.US, "%.1fs", duration / 1000.0)
-
-                            else -> String.format(
-                                Locale.US,
-                                "%dm%ds",
-                                duration / 60000,
-                                (duration % 60000) / 1000,
-                            )
-                        }
-                    }
-
-                    val wasUltrafix = pendingUltrafix
-                    pendingUltrafix = false
-                    val canvasMode = pendingCanvasMode
-                    val currentGenerationMode = when {
-                        wasUltrafix -> GenerationMode.ULTRAFIX
-
-                        canvasMode != null -> canvasMode
-
-                        supportsReferenceEditing && (selectedImageUri != null || editReferenceImages.isNotEmpty()) ->
-                            GenerationMode.EDIT
-
-                        isInpaintMode -> GenerationMode.INPAINT
-
-                        selectedImageUri != null -> GenerationMode.IMG2IMG
-
-                        else -> GenerationMode.TXT2IMG
-                    }
-
-                    val newParams = GenerationParameters(
-                        steps = generationParamsTmp.steps,
-                        cfg = generationParamsTmp.cfg,
-                        seed = returnedSeed,
-                        prompt = generationParamsTmp.prompt,
-                        negativePrompt = generationParamsTmp.negativePrompt,
-                        generationTime = genTime,
-                        // The result bitmap is the source of truth: SDXL crops a
-                        // non-1:1 aspect out of its 1024 canvas, so the requested
-                        // size is not what came back. (This used to read the
-                        // request for runOnCpu models, which was only ever right
-                        // while SD1.5 CPU was the sole CPU format.)
-                        width = state.bitmap.width,
-                        height = state.bitmap.height,
-                        runOnCpu = model?.runOnCpu ?: false,
-                        denoiseStrength = generationParamsTmp.denoiseStrength,
-                        useOpenCL = generationParamsTmp.useOpenCL,
-                        scheduler = generationParamsTmp.scheduler,
-                        mode = currentGenerationMode,
-                    )
-
-                    // Save to disk and update history list. The saved item's id is
-                    // forwarded to both the snapshot and the currently-displayed marker
-                    // so handleSaveImage can later confirm the user is still looking at
-                    // this generation (and not a different history thumbnail).
-                    coroutineScope.launch(Dispatchers.IO) {
-                        val savedItem = historyManager.saveGeneratedImage(
-                            modelId = modelId,
-                            bitmap = state.bitmap,
-                            params = newParams,
-                            mode = currentGenerationMode,
-                        )
-                        if (savedItem != null) {
-                            withContext(Dispatchers.Main) {
-                                // An ultrafix result is a standalone image, not a
-                                // stitchable inpaint patch.
-                                if (!wasUltrafix && canvasMode == null) {
-                                    stitchableHistoryIds = setOf(savedItem.id)
-                                }
-                                currentDisplayedHistoryId = savedItem.id
-                            }
-                        }
-                    }
-
-                    currentBitmap = state.bitmap
-                    generationParams = newParams
-                    generationParamsModelId = modelId
-                    imageVersion += 1
-
-                    if (!wasUltrafix && canvasMode == null) {
-                        snapshotIsInpaintMode = isInpaintMode
-                        snapshotSelectedImageUri = selectedImageUri
-                        snapshotCropRect = cropRect
-                        snapshotMaskBitmap = if (isInpaintMode) maskBitmap else null
-                        snapshotDrawingOverlayBitmap = drawingOverlayBitmap
-                        snapshotHasOriginalImage = hasOriginalImageForStitch
-                    }
-                    // stitchableHistoryIds / currentDisplayedHistoryId are set once
-                    // the DB save above resolves.
-                    stitchableHistoryIds = emptySet()
-                    currentDisplayedHistoryId = null
-
-                    Log.d(
-                        "ModelRunScreen",
-                        "params update: ${generationParams?.steps}, ${generationParams?.cfg}",
-                    )
-
-                    generationStartTime = null
-
-                    if (pagerState.currentPage == 0 && !showAdvancedSettings && !showCanvas) {
-                        try {
-                            pagerState.animateScrollToPage(1)
-                        } finally {
-                            BackgroundGenerationService.markBitmapConsumed()
-                        }
-                    } else {
-                        BackgroundGenerationService.markBitmapConsumed()
-                    }
-                }
-            }
+            is GenerationState.Complete -> handleGenerationComplete(state)
 
             is GenerationState.Error -> {
                 intermediateBitmap = null
@@ -2476,17 +2494,29 @@ fun ModelRunScreen(
                                             "start service - batch $i",
                                         )
 
-                                        context.startForegroundService(batchIntent)
+                                        val started = runCatching {
+                                            context.startForegroundService(batchIntent)
+                                        }
+                                        if (started.isFailure) {
+                                            // Android may refuse to start a foreground
+                                            // service while the app is in background.
+                                            Log.e("ModelRunScreen", "batch $i could not start", started.exceptionOrNull())
+                                            errorMessage = "Batch stopped at ${i + 1}/$actualBatchCount: " +
+                                                (started.exceptionOrNull()?.message ?: "service could not start")
+                                            break
+                                        }
                                         Log.d(
                                             "ModelRunScreen",
                                             "start service sent - batch $i",
                                         )
 
-                                        BackgroundGenerationService.generationState
+                                        val batchFinal = BackgroundGenerationService.generationState
                                             .first { state ->
                                                 state is GenerationState.Complete ||
                                                     state is GenerationState.Error
                                             }
+                                        (batchFinal as? GenerationState.Complete)
+                                            ?.let { handleGenerationComplete(it) }
 
                                         Log.d(
                                             "ModelRunScreen",
