@@ -4,9 +4,10 @@
 
 **[Local Dream](https://github.com/xororz/local-dream), with a real drawing canvas.**
 
-<img src="./assets/canvas-demo.jpg" width="320" alt="A doodled flower turned into a real one by the magic button">
+<img src="./assets/canvas-editor.png" width="300" alt="The canvas editor with tools, color panel and the magic button">&nbsp;&nbsp;
+<img src="./assets/canvas-demo.jpg" width="300" alt="A doodled flower turned into a real one by the magic button">
 
-<sub>Doodle a flower, press the magic button, keep the result.</sub>
+<sub>Left: the canvas. Right: doodle a flower, press the magic button, keep the result.</sub>
 
 </div>
 
