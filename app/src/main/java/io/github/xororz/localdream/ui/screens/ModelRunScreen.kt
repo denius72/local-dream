@@ -170,7 +170,12 @@ import io.github.xororz.localdream.utils.ParamShare
 import io.github.xororz.localdream.utils.ParamShareField
 import io.github.xororz.localdream.utils.performUpscale
 import io.github.xororz.localdream.utils.reportImage
+import io.github.xororz.localdream.canvas.CanvasGenParams
+import io.github.xororz.localdream.canvas.ui.CanvasAiState
+import io.github.xororz.localdream.canvas.ui.CanvasHost
+import io.github.xororz.localdream.canvas.ui.CanvasScreen
 import io.github.xororz.localdream.utils.saveImage
+import io.github.xororz.localdream.utils.toA1111
 import io.github.xororz.localdream.utils.saveImageFromFile
 import java.io.File
 import java.util.Locale
@@ -568,6 +573,14 @@ fun ModelRunScreen(
     var showUltrafixConfirmDialog by remember { mutableStateOf(false) }
     var showUltrafixImportDialog by remember { mutableStateOf(false) }
     var pendingUltrafix by remember { mutableStateOf(false) }
+
+    // Canvas mode: the full-screen layered editor. pendingCanvasMode marks the
+    // in-flight generation as a canvas run (and how it ran) so the completion
+    // handler records it right and leaves the prompt-page img2img state alone.
+    var showCanvas by remember { mutableStateOf(false) }
+    var canvasInitialImage by remember { mutableStateOf<Bitmap?>(null) }
+    var canvasAiState by remember { mutableStateOf<CanvasAiState>(CanvasAiState.Idle) }
+    var pendingCanvasMode by remember { mutableStateOf<GenerationMode?>(null) }
     var isUltrafixPreparing by remember { mutableStateOf(false) }
     // UltraFix runs with its own steps/denoise (defaults 10 / 0.4), persisted
     // globally and kept independent of the main generation params so tweaking
@@ -1277,6 +1290,7 @@ fun ModelRunScreen(
                             bitmap = mutableOriginal,
                             onSuccess = onSuccess,
                             onError = onError,
+                            parameters = generationParams?.toA1111(model?.name)?.format(),
                         )
                     } catch (e: Exception) {
                         withContext(Dispatchers.Main) {
@@ -1290,6 +1304,7 @@ fun ModelRunScreen(
                     bitmap = bitmap,
                     onSuccess = onSuccess,
                     onError = onError,
+                    parameters = generationParams?.toA1111(model?.name)?.format(),
                 )
             }
         }
@@ -1342,6 +1357,107 @@ fun ModelRunScreen(
 
     // Stops the in-flight generation (single or batch) but keeps the backend
     // and the screen alive, so the user can immediately generate again.
+    // Runs one generation for the canvas. [image] is the flattened drawing at
+    // canvas size (null = txt2img); [mask] is white where to regenerate.
+    fun startCanvasGeneration(image: Bitmap?, mask: Bitmap?): Boolean {
+        if (isRunning || isUpscaling || isUltrafixPreparing || serviceState is GenerationState.Progress) return false
+        val mode = when {
+            image == null -> GenerationMode.TXT2IMG
+            mask != null -> GenerationMode.INPAINT
+            else -> GenerationMode.IMG2IMG
+        }
+        pendingUltrafix = false
+        pendingCanvasMode = mode
+        canvasAiState = CanvasAiState.Running(0f, null)
+        isRunning = true
+        generationParamsTmp = GenerationParameters(
+            steps = steps.roundToInt(),
+            cfg = cfg,
+            seed = 0,
+            prompt = promptField.text,
+            negativePrompt = negativePromptField.text,
+            generationTime = "",
+            width = currentWidth,
+            height = currentHeight,
+            runOnCpu = model?.runOnCpu ?: false,
+            denoiseStrength = denoiseStrength,
+            useOpenCL = useOpenCL,
+            scheduler = scheduler,
+        )
+        batchGenerationJob = coroutineScope.launch {
+            val prepared = try {
+                withContext(Dispatchers.IO) {
+                    fun toUpload(src: Bitmap): Bitmap {
+                        val scaled = if (src.width != effectiveWidth || src.height != effectiveHeight) {
+                            src.scale(effectiveWidth, effectiveHeight)
+                        } else {
+                            src
+                        }
+                        return if (scaled.width != currentWidth || scaled.height != currentHeight) {
+                            padBitmapToCanvas(scaled, currentWidth, currentHeight)
+                        } else {
+                            scaled
+                        }
+                    }
+                    if (image != null) {
+                        File(context.filesDir, "tmp.txt").writeText(bitmapToBase64Png(toUpload(image)))
+                        if (mask != null) {
+                            File(context.filesDir, "mask.txt").writeText(bitmapToBase64Png(toUpload(mask)))
+                        }
+                    }
+                }
+                true
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                canvasAiState = CanvasAiState.Error(e.message ?: msgUnknownError)
+                false
+            }
+            if (!prepared) {
+                pendingCanvasMode = null
+                isRunning = false
+                return@launch
+            }
+            val intent = Intent(context, BackgroundGenerationService::class.java).apply {
+                putExtra("prompt", promptField.text)
+                putExtra("negative_prompt", negativePromptField.text)
+                putExtra("steps", steps.roundToInt())
+                putExtra("cfg", cfg)
+                seed.toLongOrNull()?.let { putExtra("seed", it) }
+                putExtra("width", currentWidth)
+                putExtra("height", currentHeight)
+                putExtra("effective_width", effectiveWidth)
+                putExtra("effective_height", effectiveHeight)
+                putExtra("denoise_strength", denoiseStrength)
+                putExtra("use_opencl", useOpenCL)
+                putExtra("scheduler", scheduler)
+                putExtra("aspect_ratio", aspectRatio)
+                putExtra("batch_index", 0)
+                putExtra("backend_host", backendHost)
+                if (image != null) {
+                    putExtra("has_image", true)
+                    if (mask != null) putExtra("has_mask", true)
+                }
+            }
+            context.startForegroundService(intent)
+            val final = BackgroundGenerationService.generationState.first { state ->
+                state is GenerationState.Complete || state is GenerationState.Error
+            }
+            canvasAiState = when (final) {
+                is GenerationState.Complete -> CanvasAiState.Done(final.bitmap)
+                is GenerationState.Error -> CanvasAiState.Error(final.message)
+                else -> CanvasAiState.Idle
+            }
+            withTimeoutOrNull(5000L) {
+                BackgroundGenerationService.isServiceRunning.first { !it }
+            }
+            BackgroundGenerationService.resetState()
+            pendingCanvasMode = null
+            isRunning = false
+        }
+        return true
+    }
+
     fun interruptGeneration() {
         batchGenerationJob?.cancel()
         batchGenerationJob = null
@@ -1349,6 +1465,8 @@ fun ModelRunScreen(
         BackgroundGenerationService.resetState()
         intermediateBitmap = null
         pendingUltrafix = false
+        pendingCanvasMode = null
+        canvasAiState = CanvasAiState.Idle
         isRunning = false
         progress = 0f
         currentBatchIndex = 0
@@ -1542,6 +1660,10 @@ fun ModelRunScreen(
                 progress = state.progress
                 isRunning = true
                 state.intermediateImage?.let { intermediateBitmap = it }
+                if (pendingCanvasMode != null) {
+                    val prev = (canvasAiState as? CanvasAiState.Running)?.preview
+                    canvasAiState = CanvasAiState.Running(state.progress, state.intermediateImage ?: prev)
+                }
             }
 
             is GenerationState.Complete -> {
@@ -1571,8 +1693,11 @@ fun ModelRunScreen(
 
                     val wasUltrafix = pendingUltrafix
                     pendingUltrafix = false
+                    val canvasMode = pendingCanvasMode
                     val currentGenerationMode = when {
                         wasUltrafix -> GenerationMode.ULTRAFIX
+
+                        canvasMode != null -> canvasMode
 
                         supportsReferenceEditing && (selectedImageUri != null || editReferenceImages.isNotEmpty()) ->
                             GenerationMode.EDIT
@@ -1620,7 +1745,7 @@ fun ModelRunScreen(
                             withContext(Dispatchers.Main) {
                                 // An ultrafix result is a standalone image, not a
                                 // stitchable inpaint patch.
-                                if (!wasUltrafix) {
+                                if (!wasUltrafix && canvasMode == null) {
                                     stitchableHistoryIds = setOf(savedItem.id)
                                 }
                                 currentDisplayedHistoryId = savedItem.id
@@ -1633,7 +1758,7 @@ fun ModelRunScreen(
                     generationParamsModelId = modelId
                     imageVersion += 1
 
-                    if (!wasUltrafix) {
+                    if (!wasUltrafix && canvasMode == null) {
                         snapshotIsInpaintMode = isInpaintMode
                         snapshotSelectedImageUri = selectedImageUri
                         snapshotCropRect = cropRect
@@ -1653,7 +1778,7 @@ fun ModelRunScreen(
 
                     generationStartTime = null
 
-                    if (pagerState.currentPage == 0 && !showAdvancedSettings) {
+                    if (pagerState.currentPage == 0 && !showAdvancedSettings && !showCanvas) {
                         try {
                             pagerState.animateScrollToPage(1)
                         } finally {
@@ -1667,7 +1792,11 @@ fun ModelRunScreen(
 
             is GenerationState.Error -> {
                 intermediateBitmap = null
-                errorMessage = state.message
+                if (pendingCanvasMode != null) {
+                    canvasAiState = CanvasAiState.Error(state.message)
+                } else {
+                    errorMessage = state.message
+                }
                 isRunning = false
                 progress = 0f
                 generationStartTime = null
@@ -1953,6 +2082,31 @@ fun ModelRunScreen(
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
+                                // Canvas mode: blank at the output size, or on top of the
+                                // img2img image when one is selected.
+                                TextButton(
+                                    onClick = {
+                                        if (!isRunning) {
+                                            canvasInitialImage = croppedBitmap
+                                            showCanvas = true
+                                        }
+                                    },
+                                    contentPadding = PaddingValues(
+                                        horizontal = 8.dp,
+                                        vertical = 8.dp,
+                                    ),
+                                ) {
+                                    Text(
+                                        "Canvas",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.padding(end = 4.dp),
+                                    )
+                                    Icon(
+                                        Icons.Default.Draw,
+                                        contentDescription = "canvas",
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                }
                                 if (useImg2img) {
                                     // Native edit models take a base image and any number of
                                     // references through one entry; a menu picks
@@ -2556,7 +2710,8 @@ fun ModelRunScreen(
                                     }
                                     IconButton(
                                         onClick = {
-                                            showDrawScreen = true
+                                            canvasInitialImage = croppedBitmap
+                                            showCanvas = true
                                         },
                                         enabled = !isRunning && croppedBitmap != null,
                                         modifier = Modifier
@@ -3072,6 +3227,138 @@ fun ModelRunScreen(
                 },
                 onCancel = {
                     showInpaintScreen = false
+                },
+            )
+        }
+        if (showCanvas) {
+            val canvasHost = CanvasHost(
+                modelName = model?.name ?: modelId,
+                width = effectiveWidth,
+                height = effectiveHeight,
+                canImg2img = useImg2img,
+                canInpaint = useImg2img && model?.isDit != true,
+                isBusy = { isRunning || isUpscaling || isUltrafixPreparing },
+                aiState = { canvasAiState },
+                generate = { image, mask -> startCanvasGeneration(image, mask) },
+                cancel = { interruptGeneration() },
+                resetAi = { canvasAiState = CanvasAiState.Idle },
+                currentParams = {
+                    CanvasGenParams(
+                        prompt = promptField.text,
+                        negativePrompt = negativePromptField.text,
+                        steps = steps.roundToInt(),
+                        cfg = cfg,
+                        seed = seed,
+                        denoiseStrength = denoiseStrength,
+                        scheduler = scheduler,
+                        modelId = modelId,
+                    )
+                },
+                applyParams = { p ->
+                    promptField.replaceText(p.prompt)
+                    negativePromptField.replaceText(p.negativePrompt)
+                    steps = p.steps.toFloat()
+                    cfg = p.cfg
+                    seed = p.seed
+                    denoiseStrength = p.denoiseStrength
+                    scheduler = p.scheduler
+                    saveAllFields()
+                },
+                applyA1111 = { p ->
+                    promptField.replaceText(p.prompt)
+                    negativePromptField.replaceText(p.negativePrompt)
+                    p.steps?.let { steps = it.toFloat() }
+                    p.cfg?.let { cfg = it }
+                    p.seed?.let { seed = it.toString() }
+                    p.scheduler?.let { scheduler = it }
+                    p.denoiseStrength?.let { denoiseStrength = it }
+                    saveAllFields()
+                },
+                promptEditor = {
+                    ControlledPromptTagTextField(
+                        controller = promptField,
+                        autocompleteAvailable = tagAutocompleteAvailable,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = {
+                            PromptCountLabel(
+                                label = stringResource(R.string.image_prompt),
+                                count = promptField.tokenCount,
+                                max = promptField.tokenMax,
+                                showCount = promptField.text.isNotEmpty(),
+                            )
+                        },
+                    )
+                    ControlledPromptTagTextField(
+                        controller = negativePromptField,
+                        autocompleteAvailable = tagAutocompleteAvailable,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = {
+                            PromptCountLabel(
+                                label = stringResource(R.string.negative_prompt),
+                                count = negativePromptField.tokenCount,
+                                max = negativePromptField.tokenMax,
+                                showCount = negativePromptField.text.isNotEmpty(),
+                            )
+                        },
+                    )
+                },
+                openAdvanced = {
+                    // The dialog lives on the prompt page; make sure it is composed.
+                    coroutineScope.launch { pagerState.scrollToPage(0) }
+                    showAdvancedSettings = true
+                },
+                saveToGallery = { bmp ->
+                    val done = kotlinx.coroutines.CompletableDeferred<Boolean>()
+                    val meta = GenerationParameters(
+                        steps = steps.roundToInt(),
+                        cfg = cfg,
+                        seed = seed.toLongOrNull(),
+                        prompt = promptField.text,
+                        negativePrompt = negativePromptField.text,
+                        generationTime = null,
+                        width = bmp.width,
+                        height = bmp.height,
+                        runOnCpu = model?.runOnCpu ?: false,
+                        denoiseStrength = denoiseStrength,
+                        scheduler = scheduler,
+                        mode = GenerationMode.IMG2IMG,
+                    ).toA1111(model?.name).format()
+                    saveImage(
+                        context = context,
+                        bitmap = bmp,
+                        onSuccess = { done.complete(true) },
+                        onError = { msg ->
+                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                            done.complete(false)
+                        },
+                        parameters = meta,
+                    )
+                    done.await()
+                },
+            )
+            CanvasScreen(
+                host = canvasHost,
+                initialImage = canvasInitialImage,
+                onClose = {
+                    showCanvas = false
+                    canvasInitialImage = null
+                    canvasAiState = CanvasAiState.Idle
+                    // Canvas runs reuse tmp.txt / mask.txt: put back the prompt
+                    // page's own img2img payloads.
+                    val base = croppedBitmap
+                    val baseMask = if (isInpaintMode) maskBitmap else null
+                    if (base != null) {
+                        scope.launch(Dispatchers.IO) {
+                            runCatching {
+                                File(context.filesDir, "tmp.txt")
+                                    .writeText(bitmapToBase64Png(padBitmapToCanvas(base, currentWidth, currentHeight)))
+                                baseMask?.let {
+                                    File(context.filesDir, "mask.txt")
+                                        .writeText(bitmapToBase64Png(padBitmapToCanvas(it, currentWidth, currentHeight)))
+                                }
+                            }
+                        }
+                    }
                 },
             )
         }

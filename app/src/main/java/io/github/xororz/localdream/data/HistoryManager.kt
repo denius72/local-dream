@@ -1,5 +1,8 @@
 package io.github.xororz.localdream.data
 
+import io.github.xororz.localdream.utils.toA1111
+import io.github.xororz.localdream.utils.writeImageWithParameters
+
 import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
@@ -100,7 +103,13 @@ class HistoryManager(private val context: Context) {
                 if (useJpeg) {
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
                 } else {
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                    writeImageWithParameters(
+                        bitmap,
+                        Bitmap.CompressFormat.PNG,
+                        100,
+                        params.toA1111(modelId, mode).format(),
+                        out,
+                    )
                 }
             }
 

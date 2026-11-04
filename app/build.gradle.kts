@@ -30,7 +30,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "io.github.xororz.localdream"
+        applicationId = "io.github.denius.localdreamcanvas"
         minSdk = 28
 //        minSdk = 31
         targetSdk = 36
@@ -75,7 +75,9 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         debug {
-            signingConfig = signingConfigs.getByName("release")
+            // Separate package: signed with the default debug key so it never
+            // collides with (or needs the keystore of) the upstream app.
+            applicationIdSuffix = ".debug"
         }
     }
     compileOptions {
@@ -100,10 +102,6 @@ android {
             dimension = "version"
             versionNameSuffix = ""
         }
-        create("filter") {
-            dimension = "version"
-            versionNameSuffix = "_with_filter"
-        }
     }
 }
 
@@ -118,7 +116,7 @@ androidComponents {
         variant.outputs.forEach { output ->
             val versionName = output.versionName.orNull
             if (output is com.android.build.api.variant.impl.VariantOutputImpl) {
-                output.outputFileName.set("LocalDream_armv8a_$versionName.apk")
+                output.outputFileName.set("LocalDreamCanvas_armv8a_$versionName.apk")
             }
         }
     }

@@ -301,7 +301,13 @@ suspend fun reportImage(
     }
 }
 
-suspend fun saveImage(context: Context, bitmap: Bitmap, onSuccess: () -> Unit, onError: (String) -> Unit) {
+suspend fun saveImage(
+    context: Context,
+    bitmap: Bitmap,
+    onSuccess: () -> Unit,
+    onError: (String) -> Unit,
+    parameters: String? = null,
+) {
     withContext(Dispatchers.IO) {
         try {
             val startTime = System.currentTimeMillis()
@@ -346,7 +352,7 @@ suspend fun saveImage(context: Context, bitmap: Bitmap, onSuccess: () -> Unit, o
 
                 val compressStartTime = System.currentTimeMillis()
                 resolver.openOutputStream(uri)?.use { outputStream ->
-                    bitmap.compress(format, quality, outputStream)
+                    writeImageWithParameters(bitmap, format, quality, parameters, outputStream)
                 } ?: throw IOException("Failed to open output stream")
                 Log.d(
                     "SaveImage",
@@ -368,7 +374,7 @@ suspend fun saveImage(context: Context, bitmap: Bitmap, onSuccess: () -> Unit, o
                 val file = File(imagesDir, filename)
                 val compressStartTime = System.currentTimeMillis()
                 FileOutputStream(file).use { out ->
-                    bitmap.compress(format, quality, out)
+                    writeImageWithParameters(bitmap, format, quality, parameters, out)
                 }
                 Log.d(
                     "SaveImage",
@@ -469,4 +475,26 @@ suspend fun saveImageFromFile(context: Context, sourceFile: File, onSuccess: () 
             }
         }
     }
+}
+
+/**
+ * Compresses [bitmap] into [out]; PNGs get the generation [parameters] as an
+ * A1111-style "parameters" text chunk.
+ */
+fun writeImageWithParameters(
+    bitmap: Bitmap,
+    format: Bitmap.CompressFormat,
+    quality: Int,
+    parameters: String?,
+    out: java.io.OutputStream,
+) {
+    if (parameters.isNullOrBlank() || format != Bitmap.CompressFormat.PNG) {
+        bitmap.compress(format, quality, out)
+        return
+    }
+    val bytes = java.io.ByteArrayOutputStream().use {
+        bitmap.compress(format, quality, it)
+        it.toByteArray()
+    }
+    out.write(PngMetadata.withText(bytes, PngMetadata.KEY_PARAMETERS, parameters))
 }
