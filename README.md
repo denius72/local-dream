@@ -4,6 +4,10 @@
 
 **[Local Dream](https://github.com/xororz/local-dream), with a real drawing canvas.**
 
+<img src="./assets/canvas-demo.jpg" width="320" alt="A doodled flower turned into a real one by the magic button">
+
+<sub>Doodle a flower, press the magic button, keep the result.</sub>
+
 </div>
 
 This is an unofficial fork of [xororz/local-dream](https://github.com/xororz/local-dream).
