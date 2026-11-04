@@ -296,7 +296,7 @@ fun SelectionMenuDialog(
         onDismissRequest = onDismiss,
         title = { Text("Selection") },
         text = {
-            Column {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text("Selection tool mode", style = MaterialTheme.typography.labelMedium)
                 val modes = io.github.xororz.localdream.canvas.SelectionMode.entries
                 SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
