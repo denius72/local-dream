@@ -137,7 +137,7 @@ internal suspend fun checkBackendHealth(
 
                 try {
                     val request = Request.Builder()
-                        .url("http://localhost:8081/health")
+                        .url("http://localhost:8091/health")
                         .get()
                         .build()
 

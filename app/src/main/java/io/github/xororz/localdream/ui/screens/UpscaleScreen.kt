@@ -195,7 +195,7 @@ fun UpscaleScreen(navController: NavController, modifier: Modifier = Modifier) {
                     "--lib_dir",
                     runtimeDir.absolutePath,
                     "--port",
-                    "8081",
+                    "8091",
                 )
                 if (listenOnAll) {
                     command = command + "--listen_all"
