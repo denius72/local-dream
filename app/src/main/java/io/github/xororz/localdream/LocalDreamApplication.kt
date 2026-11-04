@@ -25,6 +25,7 @@ class LocalDreamApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         io.github.xororz.localdream.data.BackendPort.init(this)
+        io.github.xororz.localdream.utils.PromptMetadataSetting.init(this)
         startMigration()
     }
 

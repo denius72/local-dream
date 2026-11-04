@@ -32,6 +32,7 @@ MediBang Paint.
   opacity, hardness, spacing and strength. Bucket fill and eyedropper.
 - S Pen: pressure (size and/or opacity), the eraser end erases, hover shows the
   brush outline, adjustable stabilizer. Optional "only the pen draws" mode.
+- Inpaint mask brush: paint (or erase) the area the AI should redraw, shown in red.
 - Selections: rectangle, lasso and magic wand (new / add / subtract), with cut,
   copy, paste as a layer, clear, and move/scale/rotate.
 - Gestures: pinch to zoom and pan, two-finger tap undoes, three-finger tap redoes.
@@ -39,17 +40,21 @@ MediBang Paint.
 **The magic button**
 - The blue button in the bottom bar generates from your drawing:
   - drawing, no selection: img2img
-  - drawing with a selection: inpaint, only the selected area is regenerated
+  - drawing with a mask or selection: inpaint, only that area is regenerated
   - empty canvas: txt2img
+
+  The button shows which mode it will run (TXT2IMG / IMG2IMG / INPAINT).
+- Batch count works too: you get several results and tap the one to keep.
 - Your drawing and the result are shown together. ✓ keeps the result (as a new
   layer or flattened, your choice), ✗ throws it away. The prompt and settings
   stay, so you can keep drawing on top and run it again.
-- The gear button holds the prompt, negative prompt and the usual
-  steps / CFG / seed / denoise / sampler.
+- The gear button holds the prompt, negative prompt, denoise strength and batch
+  count, plus the usual steps / CFG / seed / sampler.
 
 **Also**
 - Saved PNGs carry the prompt in the A1111 `parameters` format, readable by
-  Civitai, ComfyUI and most viewers. The canvas can load a prompt back from a PNG,
+  Civitai, ComfyUI and most viewers (on by default; turn off in Settings for
+  plain images like upstream). The canvas can load a prompt back from a PNG,
   which helps when you switch models.
 - Canvas projects (`.ldcanvas`: layers plus prompt and settings) are saved
   separately from the generation history: Save, Save as, Save and quit, Open.

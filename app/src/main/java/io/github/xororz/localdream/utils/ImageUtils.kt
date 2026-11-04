@@ -488,7 +488,7 @@ fun writeImageWithParameters(
     parameters: String?,
     out: java.io.OutputStream,
 ) {
-    if (parameters.isNullOrBlank() || format != Bitmap.CompressFormat.PNG) {
+    if (parameters.isNullOrBlank() || format != Bitmap.CompressFormat.PNG || !PromptMetadataSetting.enabled) {
         bitmap.compress(format, quality, out)
         return
     }

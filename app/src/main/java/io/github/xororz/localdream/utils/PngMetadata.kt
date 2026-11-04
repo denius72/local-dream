@@ -227,3 +227,25 @@ fun GenerationParameters.toA1111(modelName: String?, mode: GenerationMode = this
     model = modelName,
     denoiseStrength = if (mode == GenerationMode.IMG2IMG || mode == GenerationMode.INPAINT) denoiseStrength else null,
 )
+
+/**
+ * Whether saved PNGs carry the prompt ("parameters" chunk). On by default;
+ * off gives the same plain files as upstream Local Dream.
+ */
+object PromptMetadataSetting {
+    private const val PREFS = "app_prefs"
+    private const val KEY = "save_prompt_metadata"
+
+    @Volatile
+    var enabled: Boolean = true
+        private set
+
+    fun init(context: android.content.Context) {
+        enabled = context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).getBoolean(KEY, true)
+    }
+
+    fun set(context: android.content.Context, value: Boolean) {
+        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).edit().putBoolean(KEY, value).apply()
+        enabled = value
+    }
+}
