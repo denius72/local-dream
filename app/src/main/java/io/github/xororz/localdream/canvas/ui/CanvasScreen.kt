@@ -118,6 +118,10 @@ class CanvasHost(
     /** img2img / inpaint strength, 0..1; read in composition. */
     val denoise: () -> Float,
     val setDenoise: (Float) -> Unit,
+    val batchCount: () -> Int,
+    val setBatchCount: (Int) -> Unit,
+    /** True when a seed is set, which makes the backend run a single image. */
+    val seedFixed: () -> Boolean,
     val saveToGallery: suspend (Bitmap) -> Boolean,
 )
 
@@ -603,6 +607,16 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
+                    val b = host.batchCount()
+                    LabeledSlider("Batch count", "$b", b.toFloat(), 1f..10f) { host.setBatchCount(it.roundToInt()) }
+                    Text(
+                        if (host.seedFixed()) {
+                            "A seed is set, so only one image is generated."
+                        } else {
+                            "Generates several images in a row; you pick the one to keep."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                     OutlinedButton(onClick = {
                         showGenSettings = false
                         host.openAdvanced()
@@ -634,14 +648,15 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                 editor.acceptMode = it
                 editor.savePrefs()
             },
-            onAccept = { (state as? CanvasAiState.Done)?.let { applyResult(it.result, editor.acceptMode) } },
+            onAccept = { bmp -> applyResult(bmp, editor.acceptMode) },
             onReject = {
                 host.resetAi()
                 magicSource = null
             },
             onCancel = {
                 host.cancel()
-                magicSource = null
+                // Stopping a batch keeps the images already made.
+                if (host.aiState() !is CanvasAiState.Done) magicSource = null
             },
         )
     }

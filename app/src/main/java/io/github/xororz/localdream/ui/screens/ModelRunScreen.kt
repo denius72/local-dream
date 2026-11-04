@@ -1368,7 +1368,9 @@ fun ModelRunScreen(
         }
         pendingUltrafix = false
         pendingCanvasMode = mode
-        canvasAiState = CanvasAiState.Running(0f, null)
+        // Same rule as the Generate button: a fixed seed means one image.
+        val total = if (seed.isNotBlank()) 1 else batchCounts.coerceIn(1, 10)
+        canvasAiState = CanvasAiState.Running(0f, null, 1, total)
         isRunning = true
         generationParamsTmp = GenerationParameters(
             steps = steps.roundToInt(),
@@ -1418,6 +1420,10 @@ fun ModelRunScreen(
                 isRunning = false
                 return@launch
             }
+            val results = mutableListOf<Bitmap>()
+            var failure: String? = null
+            for (i in 0 until total) {
+            canvasAiState = CanvasAiState.Running(0f, null, i + 1, total, results.toList())
             val intent = Intent(context, BackgroundGenerationService::class.java).apply {
                 putExtra("prompt", promptField.text)
                 putExtra("negative_prompt", negativePromptField.text)
@@ -1432,7 +1438,7 @@ fun ModelRunScreen(
                 putExtra("use_opencl", useOpenCL)
                 putExtra("scheduler", scheduler)
                 putExtra("aspect_ratio", aspectRatio)
-                putExtra("batch_index", 0)
+                putExtra("batch_index", i)
                 putExtra("backend_host", backendHost)
                 if (image != null) {
                     putExtra("has_image", true)
@@ -1443,15 +1449,21 @@ fun ModelRunScreen(
             val final = BackgroundGenerationService.generationState.first { state ->
                 state is GenerationState.Complete || state is GenerationState.Error
             }
-            canvasAiState = when (final) {
-                is GenerationState.Complete -> CanvasAiState.Done(final.bitmap)
-                is GenerationState.Error -> CanvasAiState.Error(final.message)
-                else -> CanvasAiState.Idle
+            when (final) {
+                is GenerationState.Complete -> results += final.bitmap
+                is GenerationState.Error -> failure = final.message
+                else -> Unit
             }
             withTimeoutOrNull(5000L) {
                 BackgroundGenerationService.isServiceRunning.first { !it }
             }
             BackgroundGenerationService.resetState()
+            if (failure != null) break
+            }
+            canvasAiState = when {
+                results.isNotEmpty() -> CanvasAiState.Done(results.toList())
+                else -> CanvasAiState.Error(failure ?: msgUnknownError)
+            }
             pendingCanvasMode = null
             isRunning = false
         }
@@ -1661,8 +1673,9 @@ fun ModelRunScreen(
                 isRunning = true
                 state.intermediateImage?.let { intermediateBitmap = it }
                 if (pendingCanvasMode != null) {
-                    val prev = (canvasAiState as? CanvasAiState.Running)?.preview
-                    canvasAiState = CanvasAiState.Running(state.progress, state.intermediateImage ?: prev)
+                    (canvasAiState as? CanvasAiState.Running)?.let { cur ->
+                        canvasAiState = cur.copy(progress = state.progress, preview = state.intermediateImage ?: cur.preview)
+                    }
                 }
             }
 
@@ -1793,7 +1806,9 @@ fun ModelRunScreen(
             is GenerationState.Error -> {
                 intermediateBitmap = null
                 if (pendingCanvasMode != null) {
-                    canvasAiState = CanvasAiState.Error(state.message)
+                    // The batch loop decides: partial results stay pickable.
+                    val partial = (canvasAiState as? CanvasAiState.Running)?.done.orEmpty()
+                    canvasAiState = if (partial.isNotEmpty()) CanvasAiState.Done(partial) else CanvasAiState.Error(state.message)
                 } else {
                     errorMessage = state.message
                 }
@@ -3240,7 +3255,11 @@ fun ModelRunScreen(
                 isBusy = { isRunning || isUpscaling || isUltrafixPreparing },
                 aiState = { canvasAiState },
                 generate = { image, mask -> startCanvasGeneration(image, mask) },
-                cancel = { interruptGeneration() },
+                cancel = {
+                    val partial = (canvasAiState as? CanvasAiState.Running)?.done.orEmpty()
+                    interruptGeneration()
+                    if (partial.isNotEmpty()) canvasAiState = CanvasAiState.Done(partial)
+                },
                 resetAi = { canvasAiState = CanvasAiState.Idle },
                 currentParams = {
                     CanvasGenParams(
@@ -3304,6 +3323,9 @@ fun ModelRunScreen(
                 },
                 denoise = { denoiseStrength },
                 setDenoise = onDenoiseStrengthChange,
+                batchCount = { batchCounts },
+                setBatchCount = { onBatchCountsChange(it.toFloat()) },
+                seedFixed = { seed.isNotBlank() },
                 openAdvanced = {
                     // The dialog lives on the prompt page; make sure it is composed.
                     coroutineScope.launch { pagerState.scrollToPage(0) }

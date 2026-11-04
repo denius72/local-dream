@@ -17,6 +17,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -506,8 +507,16 @@ fun OpenProjectDialog(onOpen: (ProjectInfo) -> Unit, onDismiss: () -> Unit) {
 
 sealed class CanvasAiState {
     object Idle : CanvasAiState()
-    data class Running(val progress: Float, val preview: Bitmap?) : CanvasAiState()
-    data class Done(val result: Bitmap) : CanvasAiState()
+    /** [index] is 1-based; [done] holds the batch images already finished. */
+    data class Running(
+        val progress: Float,
+        val preview: Bitmap?,
+        val index: Int = 1,
+        val total: Int = 1,
+        val done: List<Bitmap> = emptyList(),
+    ) : CanvasAiState()
+
+    data class Done(val results: List<Bitmap>) : CanvasAiState()
     data class Error(val message: String) : CanvasAiState()
 }
 
@@ -521,10 +530,13 @@ fun MagicOverlay(
     state: CanvasAiState,
     acceptMode: AcceptMode,
     onAcceptModeChange: (AcceptMode) -> Unit,
-    onAccept: () -> Unit,
+    onAccept: (Bitmap) -> Unit,
     onReject: () -> Unit,
     onCancel: () -> Unit,
 ) {
+    var selected by remember { mutableStateOf(0) }
+    val results = (state as? CanvasAiState.Done)?.results.orEmpty()
+    if (selected >= results.size && results.isNotEmpty()) selected = 0
     Dialog(
         onDismissRequest = {},
         properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnBackPress = false, dismissOnClickOutside = false),
@@ -585,7 +597,7 @@ fun MagicOverlay(
                 ) {
                     when (state) {
                         is CanvasAiState.Done -> Image(
-                            state.result.asImageBitmap(),
+                            state.results[selected.coerceIn(0, state.results.lastIndex)].asImageBitmap(),
                             null,
                             contentScale = ContentScale.Fit,
                             modifier = Modifier.fillMaxSize(),
@@ -608,6 +620,9 @@ fun MagicOverlay(
                                     color = Color.White,
                                     fontWeight = FontWeight.Bold,
                                 )
+                                if (state.total > 1) {
+                                    Text("Image ${state.index} of ${state.total}", color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
+                                }
                             }
                             LinearProgressIndicator(
                                 progress = { state.progress },
@@ -623,6 +638,54 @@ fun MagicOverlay(
                             null,
                             tint = Color.White,
                             modifier = Modifier.size(56.dp).rotate(spin).scale(pulse),
+                        )
+                    }
+                }
+                // Batch: thumbnails of the finished images; tap one to pick it.
+                val thumbs = when (state) {
+                    is CanvasAiState.Done -> state.results
+                    is CanvasAiState.Running -> state.done
+                    else -> emptyList()
+                }
+                val pending = (state as? CanvasAiState.Running)?.let { (it.total - it.done.size).coerceAtLeast(0) } ?: 0
+                if (thumbs.size + pending > 1) {
+                    Spacer(Modifier.height(10.dp))
+                    Row(
+                        Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        thumbs.forEachIndexed { i, bmp ->
+                            val isSel = state is CanvasAiState.Done && i == selected
+                            Image(
+                                bmp.asImageBitmap(),
+                                "Result ${i + 1}",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .border(
+                                        if (isSel) 3.dp else 1.dp,
+                                        if (isSel) MagicBlue else Color.White.copy(alpha = 0.3f),
+                                        RoundedCornerShape(6.dp),
+                                    )
+                                    .clickable(enabled = state is CanvasAiState.Done) { selected = i },
+                            )
+                        }
+                        repeat(pending) {
+                            Box(
+                                Modifier
+                                    .size(56.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color.White.copy(alpha = 0.08f)),
+                            )
+                        }
+                    }
+                    if (state is CanvasAiState.Done) {
+                        Text(
+                            "${selected + 1} / ${state.results.size}: tap a thumbnail to pick",
+                            color = Color.White.copy(alpha = 0.6f),
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(top = 4.dp),
                         )
                     }
                 }
@@ -654,7 +717,7 @@ fun MagicOverlay(
                                     colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color(0xFFD9534F)),
                                 ) { Icon(Icons.Default.Close, "Reject", modifier = Modifier.size(36.dp), tint = Color.White) }
                                 FilledIconButton(
-                                    onClick = onAccept,
+                                    onClick = { onAccept(state.results[selected.coerceIn(0, state.results.lastIndex)]) },
                                     modifier = Modifier.size(68.dp),
                                     colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color(0xFF3FA34D)),
                                 ) { Icon(Icons.Default.Check, "Accept", modifier = Modifier.size(36.dp), tint = Color.White) }
@@ -667,7 +730,10 @@ fun MagicOverlay(
                     else -> Button(
                         onClick = onCancel,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF555B63)),
-                    ) { Text("Cancel generation") }
+                    ) {
+                        val partial = (state as? CanvasAiState.Running)?.done.orEmpty()
+                        Text(if (partial.isNotEmpty()) "Stop and pick from ${partial.size}" else "Cancel generation")
+                    }
                 }
             }
         }
