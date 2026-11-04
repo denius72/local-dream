@@ -48,8 +48,8 @@ class BackgroundGenerationService : Service() {
         private const val CHANNEL_ID = "image_generation_channel"
         private const val NOTIFICATION_ID = 1
         const val ACTION_STOP = "stop_generation"
-        // 8091, not upstream 8081: both apps can run side by side.
-        const val LOCAL_BACKEND_HOST = "localhost:8091"
+        // Configurable (Settings → Local backend port), 8081 by default.
+        val LOCAL_BACKEND_HOST: String get() = io.github.xororz.localdream.data.BackendPort.host
 
         // Shared across generations; the long timeouts cover a single SDXL
         // request that can stream for many minutes.

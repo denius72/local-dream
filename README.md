@@ -53,8 +53,10 @@ MediBang Paint.
   which helps when you switch models.
 - Canvas projects (`.ldcanvas`: layers plus prompt and settings) are saved
   separately from the generation history: Save, Save as, Save and quit, Open.
-- Installs next to the original app: package `io.github.denius.localdreamcanvas`,
-  local backend on port 8091 instead of 8081.
+- Installs next to the original app (package `io.github.denius.localdreamcanvas`).
+  The local backend port is a setting (default 8081, like upstream): if the
+  original Local Dream is running too, set **Settings → Local backend port** to
+  something else, e.g. 8091.
 - No NSFW filter build: only the `basic` flavor exists.
 
 ## Install

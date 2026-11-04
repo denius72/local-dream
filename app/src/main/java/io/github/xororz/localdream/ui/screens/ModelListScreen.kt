@@ -1387,6 +1387,7 @@ fun ModelListScreen(navController: NavController, modifier: Modifier = Modifier)
                     if (ModelStorage.isChoiceShown(context)) {
                         item { ModelStorageSection() }
                     }
+                    item { BackendPortSection() }
                     // Appearance (theme) section
                     item { AppearanceSection() }
                     // Feature settings section

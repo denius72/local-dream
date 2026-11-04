@@ -508,7 +508,7 @@ class BackendService : Service() {
                     "--lib_dir",
                     runtimeDir.absolutePath,
                     "--port",
-                    "8091",
+                    io.github.xororz.localdream.data.BackendPort.port.toString(),
                 )
             } else {
                 mutableListOf(
@@ -518,7 +518,7 @@ class BackendService : Service() {
                     "--model_dir",
                     modelsDir.absolutePath,
                     "--port",
-                    "8091",
+                    io.github.xororz.localdream.data.BackendPort.port.toString(),
                 )
             }
             // DiT types load libdit_engine.so and its FastRPC skel from the
