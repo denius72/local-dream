@@ -116,6 +116,16 @@ fun BrushSettingsDialog(editor: CanvasEditorState, onDismiss: () -> Unit) {
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 LabeledSlider("Size", "${s.size.roundToInt()} px", s.size, 1f..500f) { upd(s.copy(size = it)) }
+                if (tool == CanvasTool.INPAINT) {
+                    Text(
+                        "Paint the area the AI should redraw (shown in red). The magic button then runs inpaint on it.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    LabeledSlider("Mask edge feather", "${editor.maskFeather.roundToInt()} px", editor.maskFeather, 0f..48f) {
+                        editor.maskFeather = it
+                    }
+                    return@Column
+                }
                 LabeledSlider("Opacity", "${(s.opacity * 100).roundToInt()}%", s.opacity, 0.01f..1f) { upd(s.copy(opacity = it)) }
                 LabeledSlider("Hardness", "${(s.hardness * 100).roundToInt()}%", s.hardness, 0f..1f) { upd(s.copy(hardness = it)) }
                 if (tool == CanvasTool.BLUR || tool == CanvasTool.SMUDGE || tool == CanvasTool.AIRBRUSH) {

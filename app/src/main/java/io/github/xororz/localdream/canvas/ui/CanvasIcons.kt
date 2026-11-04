@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Colorize
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FormatColorFill
 import androidx.compose.material.icons.filled.Gesture
+import androidx.compose.material.icons.filled.Healing
 import androidx.compose.material.icons.filled.Grain
 import androidx.compose.material.icons.filled.HighlightAlt
 import androidx.compose.material.icons.filled.OpenWith
@@ -77,6 +78,7 @@ object CanvasIcons {
         CanvasTool.ERASER -> Eraser
         CanvasTool.BLUR -> Icons.Default.BlurOn
         CanvasTool.SMUDGE -> Icons.Default.TouchApp
+        CanvasTool.INPAINT -> Icons.Default.Healing
         CanvasTool.FILL -> Icons.Default.FormatColorFill
         CanvasTool.EYEDROPPER -> Icons.Default.Colorize
         CanvasTool.SELECT_RECT -> SelectRect
@@ -92,6 +94,7 @@ object CanvasIcons {
         CanvasTool.ERASER -> "Eraser"
         CanvasTool.BLUR -> "Blur"
         CanvasTool.SMUDGE -> "Smudge"
+        CanvasTool.INPAINT -> "Inpaint mask"
         CanvasTool.FILL -> "Fill"
         CanvasTool.EYEDROPPER -> "Eyedropper"
         CanvasTool.SELECT_RECT -> "Rectangle select"

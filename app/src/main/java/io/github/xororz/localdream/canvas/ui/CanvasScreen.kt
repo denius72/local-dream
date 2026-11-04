@@ -115,6 +115,9 @@ class CanvasHost(
     val applyA1111: (A1111Params) -> Unit,
     val promptEditor: @Composable () -> Unit,
     val openAdvanced: () -> Unit,
+    /** img2img / inpaint strength, 0..1; read in composition. */
+    val denoise: () -> Float,
+    val setDenoise: (Float) -> Unit,
     val saveToGallery: suspend (Bitmap) -> Boolean,
 )
 
@@ -348,7 +351,14 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                 BarButton(CanvasIcons.Eraser, "Eraser", selected = editor.tool == CanvasTool.ERASER) {
                     editor.selectTool(CanvasTool.ERASER)
                 }
-                // The magic button.
+                // The magic button, labelled with what it will run.
+                val modeLabel = remember(doc.version, doc.selection, host.canImg2img) {
+                    when {
+                        !host.canImg2img || doc.isBlank() -> "TXT2IMG"
+                        doc.selection != null && host.canInpaint -> "INPAINT"
+                        else -> "IMG2IMG"
+                    }
+                }
                 Box(
                     Modifier
                         .size(width = 76.dp, height = 46.dp)
@@ -357,7 +367,16 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                         .clickable { runMagic() },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Default.AutoFixHigh, "Generate", tint = Color.White, modifier = Modifier.size(30.dp))
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.AutoFixHigh, "Generate", tint = Color.White, modifier = Modifier.size(24.dp))
+                        Text(
+                            modeLabel,
+                            color = if (modeLabel == "INPAINT") Color(0xFFFFCDD2) else Color.White,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            lineHeight = 10.sp,
+                        )
+                    }
                 }
                 BarButton(Icons.Default.Settings, "Generation settings") { showGenSettings = true }
             }
@@ -553,10 +572,20 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     host.promptEditor()
+                    if (host.canImg2img) {
+                        val d = host.denoise()
+                        LabeledSlider("Denoise strength", String.format(java.util.Locale.US, "%.2f", d), d, 0f..1f) {
+                            host.setDenoise((it * 100).roundToInt() / 100f)
+                        }
+                        Text(
+                            "Low keeps your drawing, high lets the AI change more.",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
                     OutlinedButton(onClick = {
                         showGenSettings = false
                         host.openAdvanced()
-                    }, modifier = Modifier.fillMaxWidth()) { Text("Steps, CFG, seed, denoise, sampler…") }
+                    }, modifier = Modifier.fillMaxWidth()) { Text("Steps, CFG, seed, sampler…") }
                     OutlinedButton(onClick = { loadPromptLauncher.launch("image/png") }, modifier = Modifier.fillMaxWidth()) {
                         Text("Load prompt from a PNG image")
                     }
@@ -564,7 +593,7 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                         when {
                             !host.canImg2img -> "img2img is disabled: the canvas generates from the prompt only."
                             doc.selection != null && host.canInpaint -> "A selection is active: only the selected area will be regenerated (inpaint)."
-                            else -> "The whole drawing is sent as img2img. Empty canvas = txt2img. Make a selection to regenerate only that area."
+                            else -> "The whole drawing is sent as img2img. Empty canvas = txt2img. To regenerate only part of it, paint over it with the Inpaint mask tool (band-aid icon) or make a selection."
                         },
                         style = MaterialTheme.typography.bodySmall,
                     )
@@ -640,7 +669,7 @@ private fun BarButton(
 private val TOOLBAR_GROUPS = listOf(
     listOf(CanvasTool.PEN, CanvasTool.AIRBRUSH, CanvasTool.ERASER, CanvasTool.BLUR, CanvasTool.SMUDGE),
     listOf(CanvasTool.FILL, CanvasTool.EYEDROPPER),
-    listOf(CanvasTool.SELECT_RECT, CanvasTool.SELECT_LASSO, CanvasTool.SELECT_WAND),
+    listOf(CanvasTool.INPAINT, CanvasTool.SELECT_RECT, CanvasTool.SELECT_LASSO, CanvasTool.SELECT_WAND),
     listOf(CanvasTool.MOVE, CanvasTool.HAND),
 )
 
@@ -696,6 +725,24 @@ private fun OptionsBar(editor: CanvasEditorState, onOpenBrush: () -> Unit, onMes
     ) {
         val tool = editor.tool
         when {
+            tool == CanvasTool.INPAINT -> {
+                Chip("Paint", selected = !editor.maskErase) { editor.maskErase = false }
+                Chip("Erase", selected = editor.maskErase) { editor.maskErase = true }
+                val s = editor.settingsFor(tool)
+                Text("${s.size.roundToInt()}px", color = BarIcon, fontSize = 12.sp, modifier = Modifier.width(40.dp))
+                Slider(
+                    value = kotlin.math.sqrt(s.size),
+                    onValueChange = { editor.updateSettings(tool, s.copy(size = (it * it).coerceIn(1f, 500f))) },
+                    valueRange = 1f..kotlin.math.sqrt(500f),
+                    modifier = Modifier.weight(1f),
+                    colors = SliderDefaults.colors(thumbColor = Color.White, activeTrackColor = Color(0xFFFF3B30)),
+                )
+                Chip("Clear", selected = false) {
+                    doc.selection = null
+                    doc.redraw()
+                }
+            }
+
             tool.isBrush -> {
                 Box(
                     Modifier

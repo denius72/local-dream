@@ -54,6 +54,12 @@ class CanvasEditorState(context: Context, val doc: CanvasDocument) {
     var pressureEnabled by mutableStateOf(prefs.getBoolean("pressure", true))
     var acceptMode by mutableStateOf(AcceptMode.valueOf(prefs.getString("accept_mode", AcceptMode.NEW_LAYER.name) ?: AcceptMode.NEW_LAYER.name))
     var selectionMode by mutableStateOf(SelectionMode.REPLACE)
+
+    /** Inpaint mask brush erases instead of painting. */
+    var maskErase by mutableStateOf(false)
+
+    /** Mask being painted right now (ALPHA_8), shown instead of the selection. */
+    var maskDraft by mutableStateOf<Bitmap?>(null)
     var wandTolerance by mutableStateOf(prefs.getInt("wand_tolerance", 32))
     var fillTolerance by mutableStateOf(prefs.getInt("fill_tolerance", 24))
     var fillSampleAll by mutableStateOf(prefs.getBoolean("fill_sample_all", true))

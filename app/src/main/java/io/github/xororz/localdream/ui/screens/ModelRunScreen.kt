@@ -3302,6 +3302,8 @@ fun ModelRunScreen(
                         },
                     )
                 },
+                denoise = { denoiseStrength },
+                setDenoise = onDenoiseStrengthChange,
                 openAdvanced = {
                     // The dialog lives on the prompt page; make sure it is composed.
                     coroutineScope.launch { pagerState.scrollToPage(0) }

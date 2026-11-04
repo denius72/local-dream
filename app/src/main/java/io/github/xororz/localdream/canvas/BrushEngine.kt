@@ -17,6 +17,8 @@ enum class CanvasTool(val isBrush: Boolean = false) {
     ERASER(true),
     BLUR(true),
     SMUDGE(true),
+    /** Paints the inpaint mask (the selection) instead of pixels. */
+    INPAINT(true),
     FILL,
     EYEDROPPER,
     SELECT_RECT,
@@ -47,6 +49,7 @@ data class BrushSettings(
             CanvasTool.ERASER -> BrushSettings(size = 30f, hardness = 0.9f, spacing = 0.08f, pressureSize = false)
             CanvasTool.BLUR -> BrushSettings(size = 60f, hardness = 0.3f, spacing = 0.2f, strength = 0.6f, pressureSize = false)
             CanvasTool.SMUDGE -> BrushSettings(size = 40f, hardness = 0.4f, spacing = 0.1f, strength = 0.7f, pressureSize = false)
+            CanvasTool.INPAINT -> BrushSettings(size = 60f, pressureSize = false)
             else -> BrushSettings()
         }
     }

@@ -147,6 +147,7 @@ fun CanvasView(
         val transform = editor.transform
         transform?.revision
         editor.draftRevision
+        val maskDraft = editor.maskDraft
         val selection = doc.selection
         val hover = editor.hover
 
@@ -187,9 +188,11 @@ fun CanvasView(
                 }
             }
 
-            // Selection: dim the outside, outline the inside.
-            if (selection != null) {
-                c.drawBitmap(selection.outsideOverlay, 0f, 0f, paints.selectionTint)
+            // Selection = what the AI will regenerate: tint it red, outline it.
+            if (maskDraft != null) {
+                c.drawBitmap(maskDraft, 0f, 0f, paints.maskTint)
+            } else if (selection != null) {
+                c.drawBitmap(selection.mask, 0f, 0f, paints.maskTint)
                 selection.outline?.let { path ->
                     val shown = if (transform != null && transform.selectionBefore === selection) {
                         Path(path).apply { transform(transform.matrix) }
@@ -235,7 +238,7 @@ private class CanvasPaints {
     val saveLayer = Paint()
     val stroke = Paint(Paint.FILTER_BITMAP_FLAG)
     val dstOut = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
-    val selectionTint = Paint().apply { color = 0x553D6BFF }
+    val maskTint = Paint().apply { color = 0x66FF3B30 }
     val antsWhite = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         color = android.graphics.Color.WHITE
@@ -277,12 +280,14 @@ private abstract class ToolAction {
         ): ToolAction? {
             val doc = editor.doc
             val layer = doc.activeLayer
-            val needsVisibleLayer = tool.isBrush || tool == CanvasTool.FILL || tool == CanvasTool.MOVE
+            val needsVisibleLayer = (tool.isBrush && tool != CanvasTool.INPAINT) || tool == CanvasTool.FILL || tool == CanvasTool.MOVE
             if (needsVisibleLayer && (layer == null || !layer.visible)) {
                 onMessage("The selected layer is hidden")
                 return null
             }
             return when (tool) {
+                CanvasTool.INPAINT -> MaskBrushAction(editor, down)
+
                 CanvasTool.PEN, CanvasTool.AIRBRUSH, CanvasTool.ERASER, CanvasTool.BLUR, CanvasTool.SMUDGE ->
                     BrushAction(editor, tool, down, isPen)
 
@@ -523,4 +528,49 @@ private class MoveAction(private val editor: CanvasEditorState) : ToolAction() {
 
     override fun end(change: PointerInputChange) = Unit
     override fun cancel() = Unit
+}
+
+/** Paints (or erases) the inpaint mask, which is the document selection. */
+private class MaskBrushAction(private val editor: CanvasEditorState, down: PointerInputChange) : ToolAction() {
+    private val doc = editor.doc
+    private val mask: android.graphics.Bitmap =
+        doc.selection?.mask?.copy(android.graphics.Bitmap.Config.ALPHA_8, true)
+            ?: Selection.empty(doc.width, doc.height)
+    private val canvas = android.graphics.Canvas(mask)
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+        color = android.graphics.Color.BLACK
+        strokeWidth = editor.settingsFor(CanvasTool.INPAINT).size
+        if (editor.maskErase) xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
+    }
+    private var last = editor.screenToDoc(down.position)
+
+    init {
+        canvas.drawPoint(last.x, last.y, paint)
+        editor.maskDraft = mask
+        editor.draftRevision++
+    }
+
+    override fun update(event: PointerEvent, down: PointerInputChange) {
+        val ch = event.changes.firstOrNull { it.id == down.id } ?: return
+        (ch.historical.map { it.position } + ch.position).forEach { p ->
+            val d = editor.screenToDoc(p)
+            canvas.drawLine(last.x, last.y, d.x, d.y, paint)
+            last = d
+        }
+        editor.draftRevision++
+    }
+
+    override fun end(change: PointerInputChange) {
+        editor.maskDraft = null
+        doc.selection = Selection.fromMask(mask, null)
+        doc.redraw()
+    }
+
+    override fun cancel() {
+        editor.maskDraft = null
+        doc.redraw()
+    }
 }
