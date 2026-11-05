@@ -56,6 +56,8 @@ MediBang Paint.
   Civitai, ComfyUI and most viewers (on by default; turn off in Settings for
   plain images like upstream). The canvas can load a prompt back from a PNG,
   which helps when you switch models.
+- Fix: images finished while the app is minimized or the screen is locked are
+  saved (upstream drops them). Leave a batch running in your pocket.
 - Canvas projects (`.ldcanvas`: layers plus prompt and settings) are saved
   separately from the generation history: Save, Save as, Save and quit, Open.
 - Installs next to the original app (package `io.github.denius.localdreamcanvas`).
