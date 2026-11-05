@@ -740,3 +740,45 @@ fun MagicOverlay(
         }
     }
 }
+
+/** True when the two sizes have (nearly) the same aspect ratio. */
+internal fun sameAspect(w1: Int, h1: Int, w2: Int, h2: Int): Boolean {
+    val a = w1.toFloat() / h1
+    val b = w2.toFloat() / h2
+    return kotlin.math.abs(a - b) / b < 0.01f
+}
+
+/** The canvas and the model's output size have different shapes: ask what to do. */
+@Composable
+internal fun AspectMismatchDialog(
+    docW: Int,
+    docH: Int,
+    modelW: Int,
+    modelH: Int,
+    onResize: (fill: Boolean) -> Unit,
+    onStretch: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Different aspect ratio") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "The canvas is $docW×$docH but the model generates $modelW×$modelH. " +
+                        "Generating as is stretches the drawing and the result.",
+                )
+                androidx.compose.material3.OutlinedButton(onClick = { onResize(false) }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Resize canvas: fit (keep everything, add margins)")
+                }
+                androidx.compose.material3.OutlinedButton(onClick = { onResize(true) }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Resize canvas: fill (crop the edges)")
+                }
+                androidx.compose.material3.OutlinedButton(onClick = onStretch, modifier = Modifier.fillMaxWidth()) {
+                    Text("Generate anyway (stretched)")
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}

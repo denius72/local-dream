@@ -59,6 +59,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -158,7 +159,11 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
     var doc by remember { mutableStateOf(newDocument(host.width, host.height, initialImage)) }
     val editor = remember(doc) { CanvasEditorState(context, doc) }
     var projectName by remember { mutableStateOf<String?>(null) }
-    var savedCounter by remember(doc) { mutableIntStateOf(doc.dirtyCounter) }
+    // A resized document starts out unsaved even though it is a fresh object.
+    val startDirty = remember { booleanArrayOf(false) }
+    var savedCounter by remember(doc) {
+        mutableIntStateOf(if (startDirty[0]) -1 else doc.dirtyCounter).also { startDirty[0] = false }
+    }
     val isDirty = doc.dirtyCounter != savedCounter
 
     var showColorPanel by remember { mutableStateOf(true) }
@@ -178,6 +183,8 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
     var noRoomResult by remember { mutableStateOf<Bitmap?>(null) }
     var busy by remember { mutableStateOf(false) }
     var showGenerateHint by remember { mutableStateOf(false) }
+    var askAspect by remember { mutableStateOf(false) }
+    var generateAfterResize by remember { mutableStateOf(false) }
 
     fun toast(msg: String) = Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
 
@@ -211,9 +218,19 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
         if (isDirty) confirmExit = true else onClose()
     }
 
-    fun runMagic(confirmed: Boolean = false) {
+    fun resizeDoc(fill: Boolean) {
+        editor.commitTransform()
+        startDirty[0] = true
+        doc = doc.resizedTo(host.width, host.height, fill)
+    }
+
+    fun runMagic(confirmed: Boolean = false, aspectChecked: Boolean = false) {
         if (!confirmed && !GenerateHintSession.dismissed) {
             showGenerateHint = true
+            return
+        }
+        if (!aspectChecked && !sameAspect(doc.width, doc.height, host.width, host.height)) {
+            askAspect = true
             return
         }
         editor.commitTransform()
@@ -429,6 +446,33 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
         )
     }
 
+    // Generate once the resized document is in place (the editor follows doc).
+    LaunchedEffect(doc) {
+        if (generateAfterResize) {
+            generateAfterResize = false
+            runMagic(confirmed = true, aspectChecked = true)
+        }
+    }
+
+    if (askAspect) {
+        AspectMismatchDialog(
+            docW = doc.width,
+            docH = doc.height,
+            modelW = host.width,
+            modelH = host.height,
+            onResize = { fill ->
+                askAspect = false
+                generateAfterResize = true
+                resizeDoc(fill)
+            },
+            onStretch = {
+                askAspect = false
+                runMagic(confirmed = true, aspectChecked = true)
+            },
+            onDismiss = { askAspect = false },
+        )
+    }
+
     if (showBrushSettings) BrushSettingsDialog(editor) { showBrushSettings = false }
     if (showColorPicker) ColorPickerDialog(editor) { showColorPicker = false }
     if (showSelectionMenu) {
@@ -494,6 +538,16 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                         showProjectMenu = false
                         importImageLauncher.launch("image/*")
                     }
+                    if (doc.width != host.width || doc.height != host.height) {
+                        MenuRow("Resize canvas to ${host.width}×${host.height} (fit)") {
+                            showProjectMenu = false
+                            resizeDoc(fill = false)
+                        }
+                        MenuRow("Resize canvas to ${host.width}×${host.height} (fill, crop edges)") {
+                            showProjectMenu = false
+                            resizeDoc(fill = true)
+                        }
+                    }
                     HorizontalDivider()
                     MenuRow("Leave canvas") {
                         showProjectMenu = false
@@ -530,7 +584,7 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                         projectName = p.name
                         p.params?.let { host.applyParams(it) }
                         if (p.doc.width != host.width || p.doc.height != host.height) {
-                            toast("Project is ${p.doc.width}×${p.doc.height}; the model uses ${host.width}×${host.height}: the image will be resized when generating")
+                            toast("Project is ${p.doc.width}×${p.doc.height}; the model uses ${host.width}×${host.height}. Resize it from the project menu if needed")
                         }
                     }.onFailure { toast("Failed to open: ${it.message}") }
                 }

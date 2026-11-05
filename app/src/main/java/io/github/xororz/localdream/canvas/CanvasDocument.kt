@@ -448,4 +448,29 @@ class CanvasDocument(val width: Int, val height: Int) {
     }
 
     fun newLayerObject(name: String, bitmap: Bitmap, visible: Boolean, opacity: Float): CanvasLayer = CanvasLayer(nextId++, name, bitmap, visible, opacity)
+
+    /**
+     * A copy of this document at [w]×[h] with every layer scaled uniformly and
+     * centred, so nothing is distorted. [fill] = true covers the new size and
+     * crops the overflowing edges; false fits everything and leaves
+     * transparent margins (the paper colour shows through). Selection, inpaint
+     * mask and undo history are not carried over.
+     */
+    fun resizedTo(w: Int, h: Int, fill: Boolean): CanvasDocument {
+        val k = if (fill) maxOf(w.toFloat() / width, h.toFloat() / height) else minOf(w.toFloat() / width, h.toFloat() / height)
+        val dw = width * k
+        val dh = height * k
+        val l = (w - dw) / 2f
+        val t = (h - dh) / 2f
+        val dst = android.graphics.RectF(l, t, l + dw, t + dh)
+        val paint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+        val out = CanvasDocument(w, h)
+        val newLayers = layers.map { layer ->
+            val bmp = out.newBitmap()
+            Canvas(bmp).drawBitmap(layer.bitmap, null, dst, paint)
+            CanvasLayer(layer.id, layer.name, bmp, layer.visible, layer.opacity)
+        }
+        out.replaceAll(newLayers, activeIndex, paperColor)
+        return out
+    }
 }
