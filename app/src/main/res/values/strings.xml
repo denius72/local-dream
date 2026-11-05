@@ -378,7 +378,7 @@
 
     <!-- History backup -->
     <string name="backup_restore">Backup &amp; Restore</string>
-    <string name="backup_hint">Export your generation history (images and parameters) to a zip file, or import a backup to merge it into the current history. Duplicates are skipped automatically.</string>
+    <string name="backup_hint">Export your generation history (images and parameters), canvas projects and canvas settings to a zip file, or import a backup to merge it into what you have. Duplicates are skipped automatically.</string>
     <string name="backup_stats_all">All: %1$d images (%2$s)</string>
     <string name="backup_stats_favorites">Favorites: %1$d images (%2$s)</string>
     <string name="backup_scope_all">All</string>
@@ -393,6 +393,12 @@
     <string name="backup_import_orphan_note">%1$d models in this backup are not installed. Their records were imported and can be viewed via the history filter (All models).</string>
     <string name="backup_failed">Operation failed: %1$s</string>
     <string name="backup_invalid_file">Not a valid Local Dream backup file</string>
+    <string name="backup_stats_canvas">Canvas: %1$d projects (%2$s) and canvas settings</string>
+    <string name="backup_compat_upstream">Compatible with original Local Dream</string>
+    <string name="backup_compat_upstream_hint">Exports the history only, without canvas projects or settings. A normal backup also imports in the original app, but carries the canvas data along unused.</string>
+    <string name="backup_export_done_canvas">Exported %1$d images and %2$d canvas projects</string>
+    <string name="backup_import_done_canvas">Canvas: imported %1$d projects, skipped %2$d duplicates, %3$d failed</string>
+    <string name="backup_import_canvas_settings">Canvas settings restored</string>
     <string name="delete_keep_history">Keep generation history</string>
     <string name="delete_keep_history_hint">History stays viewable in the history page after the model is deleted</string>
 

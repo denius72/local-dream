@@ -10,6 +10,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.util.zip.Deflater
 import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.Dispatchers
@@ -25,11 +26,14 @@ data class BackupStats(
     val totalBytes: Long,
     val favoriteCount: Int,
     val favoriteBytes: Long,
+    val canvasCount: Int = 0,
+    val canvasBytes: Long = 0,
 )
 
 data class BackupExportResult(
     val exported: Int,
     val skippedMissingImage: Int,
+    val canvasProjects: Int = 0,
 )
 
 data class BackupImportResult(
@@ -37,12 +41,23 @@ data class BackupImportResult(
     val duplicates: Int,
     val failed: Int,
     val orphanModelIds: Set<String>,
+    val canvasImported: Int = 0,
+    val canvasDuplicates: Int = 0,
+    val canvasFailed: Int = 0,
+    val canvasSettingsRestored: Boolean = false,
 )
 
 // Exports generation history (DB rows plus image files) into a single zip
 // and merges such zips back in. The zip carries a JSON manifest instead of
 // a raw DB copy so backups stay readable across schema versions and import
 // merges into the existing history rather than replacing it.
+//
+// Canvas data (this fork only) rides along in the same zip: project files
+// under canvas_projects/ and the canvas tool settings in the manifest's
+// "canvas" key. The format and version stay those of upstream Local Dream,
+// which ignores unknown keys and zip entries, so a full backup still imports
+// there (history only). Exporting with includeCanvas = false writes exactly
+// the upstream layout.
 object HistoryBackup {
     private const val MANIFEST_NAME = "manifest.json"
     private const val FORMAT = "localdream-history-backup"
@@ -51,6 +66,16 @@ object HistoryBackup {
     // Exactly the layout saveGeneratedImage produces. Anything else in a
     // manifest (absolute paths, traversal, foreign files) is rejected.
     private val imagePathRegex = Regex("""history/[^/\\]+/\d+\.(png|jpg)""")
+
+    private const val CANVAS_DIR = "canvas_projects"
+    private const val CANVAS_EXT = "ldcanvas"
+    private const val CANVAS_PREFS = "canvas_prefs"
+    private val canvasPathRegex = Regex("""$CANVAS_DIR/[^/\\]+\.$CANVAS_EXT""")
+
+    private fun canvasProjects(context: Context): List<File> =
+        File(context.filesDir, CANVAS_DIR).listFiles { f -> f.isFile && f.extension == CANVAS_EXT }
+            .orEmpty()
+            .sortedBy { it.name }
 
     suspend fun stats(context: Context): BackupStats = withContext(Dispatchers.IO) {
         val dao = AppDatabase.get(context).historyDao()
@@ -70,13 +95,22 @@ object HistoryBackup {
                 favoriteBytes += size
             }
         }
-        BackupStats(totalCount, totalBytes, favoriteCount, favoriteBytes)
+        val projects = canvasProjects(context)
+        BackupStats(
+            totalCount,
+            totalBytes,
+            favoriteCount,
+            favoriteBytes,
+            canvasCount = projects.size,
+            canvasBytes = projects.sumOf { it.length() },
+        )
     }
 
     suspend fun export(
         context: Context,
         uri: Uri,
         favoritesOnly: Boolean,
+        includeCanvas: Boolean,
         onProgress: (done: Int, total: Int) -> Unit,
     ): BackupExportResult = withContext(Dispatchers.IO) {
         val dao = AppDatabase.get(context).historyDao()
@@ -85,13 +119,17 @@ object HistoryBackup {
         )
         val rows = dao.queryOnce(filter.toSqlQuery())
         val items = rows.filter { File(context.filesDir, it.imagePath).isFile }
+        val projects = if (includeCanvas) canvasProjects(context) else emptyList()
+        val total = items.size + projects.size
 
         val output = context.contentResolver.openOutputStream(uri)
             ?: throw IOException("Cannot open backup destination")
         ZipOutputStream(BufferedOutputStream(output)).use { zip ->
             zip.setLevel(Deflater.BEST_SPEED)
             zip.putNextEntry(ZipEntry(MANIFEST_NAME))
-            zip.write(buildManifest(items).toString().toByteArray())
+            val manifest = buildManifest(items)
+            if (includeCanvas) manifest.put("canvas", buildCanvasManifest(context, projects))
+            zip.write(manifest.toString().toByteArray())
             zip.closeEntry()
 
             // The payloads are PNG/JPEG; deflating them again only burns CPU.
@@ -101,10 +139,17 @@ object HistoryBackup {
                 zip.putNextEntry(ZipEntry(row.imagePath))
                 File(context.filesDir, row.imagePath).inputStream().use { it.copyTo(zip) }
                 zip.closeEntry()
-                onProgress(index + 1, items.size)
+                onProgress(index + 1, total)
+            }
+            projects.forEachIndexed { index, file ->
+                ensureActive()
+                zip.putNextEntry(ZipEntry("$CANVAS_DIR/${file.name}"))
+                file.inputStream().use { it.copyTo(zip) }
+                zip.closeEntry()
+                onProgress(items.size + index + 1, total)
             }
         }
-        BackupExportResult(items.size, rows.size - items.size)
+        BackupExportResult(items.size, rows.size - items.size, projects.size)
     }
 
     suspend fun import(
@@ -147,16 +192,38 @@ object HistoryBackup {
             pending[entity.imagePath] = entity
         }
 
+        val canvas = manifest.optJSONObject("canvas")
+        val canvasPending = mutableSetOf<String>()
+        var canvasFailed = 0
+        canvas?.optJSONArray("projects")?.let { arr ->
+            for (i in 0 until arr.length()) {
+                val path = arr.optString(i)
+                if (canvasPathRegex.matches(path)) canvasPending += path else canvasFailed++
+            }
+        }
+
         // Pass 2: stream images to their final location, then insert the row.
         // Each item commits on its own, so a cancelled import keeps what it
         // finished and a re-run resumes via the duplicate check above.
-        val total = pending.size
+        val total = pending.size + canvasPending.size
+        var done = 0
         var imported = 0
+        var canvasImported = 0
+        var canvasDuplicates = 0
         val orphanModelIds = mutableSetOf<String>()
         if (total > 0) {
             openZip(context, uri).use { zip ->
                 generateSequence { zip.nextEntry }.forEach { entry ->
                     ensureActive()
+                    if (canvasPending.remove(entry.name)) {
+                        when (importCanvasProject(context, zip, entry.name.substringAfter('/'))) {
+                            CanvasImport.IMPORTED -> canvasImported++
+                            CanvasImport.DUPLICATE -> canvasDuplicates++
+                            CanvasImport.FAILED -> canvasFailed++
+                        }
+                        onProgress(++done, total)
+                        return@forEach
+                    }
                     val entity = pending.remove(entry.name) ?: return@forEach
                     writeImage(zip, File(context.filesDir, entity.imagePath))
                     dao.insert(entity)
@@ -164,12 +231,100 @@ object HistoryBackup {
                     if (entity.modelId !in installedModelIds) {
                         orphanModelIds += entity.modelId
                     }
-                    onProgress(imported, total)
+                    onProgress(++done, total)
                 }
             }
         }
-        // Whatever is still pending had no matching image entry in the zip.
-        BackupImportResult(imported, duplicates, invalid + pending.size, orphanModelIds)
+        val settingsRestored = canvas?.optJSONObject("settings")?.let { restoreCanvasPrefs(context, it) } ?: false
+        // Whatever is still pending had no matching entry in the zip.
+        BackupImportResult(
+            imported,
+            duplicates,
+            invalid + pending.size,
+            orphanModelIds,
+            canvasImported = canvasImported,
+            canvasDuplicates = canvasDuplicates,
+            canvasFailed = canvasFailed + canvasPending.size,
+            canvasSettingsRestored = settingsRestored,
+        )
+    }
+
+    private enum class CanvasImport { IMPORTED, DUPLICATE, FAILED }
+
+    // Same name and same bytes = duplicate. Same name, different content =
+    // kept under a new name, so an import never overwrites a project.
+    private fun importCanvasProject(context: Context, source: InputStream, fileName: String): CanvasImport {
+        val dir = File(context.filesDir, CANVAS_DIR).apply { mkdirs() }
+        val tmp = File(dir, "$fileName.part")
+        try {
+            tmp.outputStream().use { source.copyTo(it) }
+            val valid = runCatching { ZipFile(tmp).use { it.getEntry("manifest.json") != null } }.getOrDefault(false)
+            if (!valid) return CanvasImport.FAILED
+            val base = fileName.removeSuffix(".$CANVAS_EXT")
+            var target = File(dir, fileName)
+            var n = 2
+            while (target.exists()) {
+                if (sameContent(target, tmp)) return CanvasImport.DUPLICATE
+                target = File(dir, "$base ($n).$CANVAS_EXT")
+                n++
+            }
+            return if (tmp.renameTo(target)) CanvasImport.IMPORTED else CanvasImport.FAILED
+        } finally {
+            tmp.delete()
+        }
+    }
+
+    private fun sameContent(a: File, b: File): Boolean {
+        if (a.length() != b.length()) return false
+        a.inputStream().buffered().use { x ->
+            b.inputStream().buffered().use { y ->
+                while (true) {
+                    val c = x.read()
+                    if (c != y.read()) return false
+                    if (c == -1) return true
+                }
+            }
+        }
+    }
+
+    private fun buildCanvasManifest(context: Context, projects: List<File>): JSONObject {
+        val settings = JSONObject()
+        context.getSharedPreferences(CANVAS_PREFS, Context.MODE_PRIVATE).all.forEach { (key, value) ->
+            val typed = when (value) {
+                is Boolean -> "boolean" to value
+                is Int -> "int" to value
+                is Long -> "long" to value
+                is Float -> "float" to value.toDouble()
+                is String -> "string" to value
+                is Set<*> -> "string_set" to JSONArray(value.map { it.toString() })
+                else -> null
+            } ?: return@forEach
+            settings.put(key, JSONObject().put("type", typed.first).put("value", typed.second))
+        }
+        return JSONObject().apply {
+            put("projects", JSONArray(projects.map { "$CANVAS_DIR/${it.name}" }))
+            put("settings", settings)
+        }
+    }
+
+    private fun restoreCanvasPrefs(context: Context, settings: JSONObject): Boolean {
+        if (settings.length() == 0) return false
+        val editor = context.getSharedPreferences(CANVAS_PREFS, Context.MODE_PRIVATE).edit()
+        settings.keys().forEach { key ->
+            val item = settings.optJSONObject(key) ?: return@forEach
+            when (item.optString("type")) {
+                "boolean" -> editor.putBoolean(key, item.optBoolean("value"))
+                "int" -> editor.putInt(key, item.optInt("value"))
+                "long" -> editor.putLong(key, item.optLong("value"))
+                "float" -> editor.putFloat(key, item.optDouble("value").toFloat())
+                "string" -> editor.putString(key, item.optString("value"))
+                "string_set" -> item.optJSONArray("value")?.let { arr ->
+                    editor.putStringSet(key, (0 until arr.length()).map { arr.optString(it) }.toSet())
+                }
+            }
+        }
+        editor.apply()
+        return true
     }
 
     private fun openZip(context: Context, uri: Uri): ZipInputStream {

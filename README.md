@@ -40,7 +40,9 @@ MediBang Paint.
 **The magic button**
 - The blue button in the bottom bar generates from your drawing:
   - drawing, no selection: img2img
-  - drawing with a mask or selection: inpaint, only that area is regenerated
+  - drawing with an inpaint mask: inpaint, only the red area is regenerated
+    (a selection is just a selection; turn it into a mask with
+    Selection → Use as inpaint mask)
   - empty canvas: txt2img
 
   The button shows which mode it will run (TXT2IMG / IMG2IMG / INPAINT).
@@ -61,6 +63,9 @@ MediBang Paint.
   (careful, your phone may get very hot, unless you wanted a pocket heater).
 - Canvas projects (`.ldcanvas`: layers plus prompt and settings) are saved
   separately from the generation history: Save, Save as, Save and quit, Open.
+- Backup & Restore also carries canvas projects and canvas settings. Turn on
+  "Compatible with original Local Dream" to export the history only, in the
+  upstream format.
 - Installs next to the original app (package `io.github.denius.localdreamcanvas`).
   The local backend port is a setting (default 8081, like upstream): if the
   original Local Dream is running too, set **Settings → Local backend port** to

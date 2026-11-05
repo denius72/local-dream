@@ -15,6 +15,7 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ToggleButton
@@ -25,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -63,6 +65,7 @@ fun DataBackupDialog(installedModelIds: Set<String>, onDismiss: () -> Unit) {
 
     var stats by remember { mutableStateOf<BackupStats?>(null) }
     var favoritesOnly by remember { mutableStateOf(false) }
+    var upstreamCompatible by remember { mutableStateOf(false) }
     var phase by remember { mutableStateOf<BackupPhase>(BackupPhase.Idle) }
     var job by remember { mutableStateOf<Job?>(null) }
 
@@ -85,7 +88,7 @@ fun DataBackupDialog(installedModelIds: Set<String>, onDismiss: () -> Unit) {
         job = scope.launch {
             phase = BackupPhase.Running(isImport = false, done = 0, total = 0)
             try {
-                val result = HistoryBackup.export(context, uri, favoritesOnly) { done, total ->
+                val result = HistoryBackup.export(context, uri, favoritesOnly, includeCanvas = !upstreamCompatible) { done, total ->
                     phase = BackupPhase.Running(isImport = false, done = done, total = total)
                 }
                 phase = BackupPhase.ExportDone(result)
@@ -168,6 +171,19 @@ fun DataBackupDialog(installedModelIds: Set<String>, onDismiss: () -> Unit) {
                             ),
                             style = MaterialTheme.typography.bodyMedium,
                         )
+                        Text(
+                            text = stringResource(
+                                R.string.backup_stats_canvas,
+                                currentStats.canvasCount,
+                                formatBytes(currentStats.canvasBytes),
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (upstreamCompatible) {
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                        )
                     }
                 }
 
@@ -197,6 +213,29 @@ fun DataBackupDialog(installedModelIds: Set<String>, onDismiss: () -> Unit) {
                     }
                 }
 
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.backup_compat_upstream),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        Text(
+                            text = stringResource(R.string.backup_compat_upstream_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = upstreamCompatible,
+                        onCheckedChange = { upstreamCompatible = it },
+                        enabled = running == null,
+                    )
+                }
+
                 when (val p = phase) {
                     is BackupPhase.Running -> {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -224,7 +263,11 @@ fun DataBackupDialog(installedModelIds: Set<String>, onDismiss: () -> Unit) {
 
                     is BackupPhase.ExportDone -> {
                         Text(
-                            text = stringResource(R.string.backup_export_done, p.result.exported),
+                            text = if (p.result.canvasProjects > 0) {
+                                stringResource(R.string.backup_export_done_canvas, p.result.exported, p.result.canvasProjects)
+                            } else {
+                                stringResource(R.string.backup_export_done, p.result.exported)
+                            },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary,
                         )
@@ -242,6 +285,26 @@ fun DataBackupDialog(installedModelIds: Set<String>, onDismiss: () -> Unit) {
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.primary,
                             )
+                            val r = p.result
+                            if (r.canvasImported + r.canvasDuplicates + r.canvasFailed > 0) {
+                                Text(
+                                    text = stringResource(
+                                        R.string.backup_import_done_canvas,
+                                        r.canvasImported,
+                                        r.canvasDuplicates,
+                                        r.canvasFailed,
+                                    ),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                            if (r.canvasSettingsRestored) {
+                                Text(
+                                    text = stringResource(R.string.backup_import_canvas_settings),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                             if (p.result.orphanModelIds.isNotEmpty()) {
                                 Text(
                                     text = stringResource(
@@ -275,10 +338,14 @@ fun DataBackupDialog(installedModelIds: Set<String>, onDismiss: () -> Unit) {
                             onClick = {
                                 val name = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
                                     .format(Date())
-                                exportLauncher.launch("LocalDream_history_$name.zip")
+                                exportLauncher.launch(
+                                    if (upstreamCompatible) "LocalDream_history_$name.zip" else "LocalDreamCanvas_backup_$name.zip",
+                                )
                             },
-                            enabled = currentStats != null &&
-                                (if (favoritesOnly) currentStats.favoriteCount else currentStats.totalCount) > 0,
+                            enabled = currentStats != null && (
+                                (if (favoritesOnly) currentStats.favoriteCount else currentStats.totalCount) > 0 ||
+                                    (!upstreamCompatible && currentStats.canvasCount > 0)
+                                ),
                             modifier = Modifier.weight(1f),
                         ) {
                             Text(stringResource(R.string.backup_export))
