@@ -1,0 +1,554 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">Local Dream Canvas</string>
+
+    <!-- Models -->
+    <string name="anythingv5_description">Geração de imagens anime</string>
+    <string name="cyberrealistic_description">Geração de imagens realistas</string>
+    <string name="illustriousv16_description">WAI Illustrious SDXL v16</string>
+    <string name="dmd2_description">Mesclado com a LoRA DMD2</string>
+    <string name="capture_logs">Capturar logs</string>
+    <string name="capture_logs_hint">Coleta os logs do app enquanto um modelo roda e mostra quando você sai</string>
+    <string name="listen_on_all_addresses">Permitir acesso pela rede local</string>
+    <string name="listen_on_all_addresses_hint">Deixa outros aparelhos na mesma rede acessarem o backend (porta 8081). Desligado = só local.</string>
+    <string name="tag_autocomplete">Autocompletar tags</string>
+    <string name="tag_autocomplete_hint">Sugere e corrige tags enquanto você digita o prompt</string>
+    <string name="tag_alias_label">Alias</string>
+    <string name="tag_correction_label">Correção</string>
+    <string name="tag_embedding_label">Embedding</string>
+    <string name="tag_main_dictionary">Dicionário de tags</string>
+    <string name="tag_main_dictionary_hint">Não importado. As sugestões ficam desativadas até você importar um CSV (ex.: danbooru.csv).</string>
+    <string name="tag_translation_dictionary">Dicionário de tradução (opcional)</string>
+    <string name="tag_translation_dictionary_hint">Não importado. Importe um CSV de 2 ou 3 colunas para buscar no seu idioma.</string>
+    <plurals name="tag_imported_status">
+        <item quantity="one">%1$s · %2$d entrada</item>
+        <item quantity="other">%1$s · %2$d entradas</item>
+        <item quantity="many">%1$s · %2$d entradas</item>
+    </plurals>
+    <string name="tag_import">Importar CSV</string>
+    <string name="tag_reimport">Substituir</string>
+    <string name="tag_clear">Limpar</string>
+    <plurals name="tag_import_success">
+        <item quantity="one">%1$d entrada importada</item>
+        <item quantity="other">%1$d entradas importadas</item>
+        <item quantity="many">%1$d entradas importadas</item>
+    </plurals>
+    <string name="tag_import_failed">Falha na importação</string>
+    <string name="sdxl_lowram">Modo pouca RAM do SDXL</string>
+    <string name="sdxl_lowram_hint">Só para SDXL: carrega cada modelo quando precisa e libera depois de usar. Necessário em aparelhos com menos de 16GB de RAM. Desativa a prévia durante a geração.</string>
+    <string name="anima_lowram">Modo pouca RAM do Anima</string>
+    <string name="anima_lowram_hint">Só para Anima: carrega cada modelo quando precisa e libera depois de usar. Necessário em aparelhos com menos de 16GB de RAM. Desativa a prévia durante a geração.</string>
+    <string name="anima_seq_dit">Carregamento sequencial do DiT do Anima</string>
+    <string name="anima_seq_dit_hint">Só com o modo pouca RAM do Anima: nunca mantém as duas metades do DiT na memória ao mesmo tempo. Ative se você tem 12GB de RAM e o modo pouca RAM do Anima ainda não roda. Cada step fica mais lento.</string>
+    <string name="captured_logs_title">Logs capturados</string>
+    <string name="log_saved">Salvo em %1$s</string>
+    <string name="log_save_failed">Falha ao salvar o log</string>
+    <string name="no_logs_captured">Nenhum log foi capturado</string>
+    <string name="chilloutmix_description">Série ChilloutMix</string>
+    <string name="qteamix_description">Anime estilo chibi</string>
+    <string name="cuteyukimix_description">Anime estilo fofo</string>
+    <string name="absolutereality_description">Geração de imagens realistas</string>
+    <!-- Models -->
+    <string name="backend_notify">Serviço de backend do modelo em execução</string>
+    <string name="backend_notify_title">Backend do modelo SD</string>
+    <string name="generating_notify">Gerando imagem…</string>
+
+    <!-- Common -->
+    <string name="settings">Configurações</string>
+    <string name="appearance">Aparência</string>
+    <string name="theme_preset">Tema de cores</string>
+    <string name="theme_preset_hint">Usado quando a cor dinâmica está desligada</string>
+    <string name="dynamic_color">Cor dinâmica</string>
+    <string name="dynamic_color_hint">Combina as cores com o papel de parede (Android 12+)</string>
+    <string name="dark_mode">Modo escuro</string>
+    <string name="dark_mode_system">Sistema</string>
+    <string name="dark_mode_light">Claro</string>
+    <string name="dark_mode_dark">Escuro</string>
+    <string name="theme_tangerine">Tangerina</string>
+    <string name="theme_forest">Floresta</string>
+    <string name="theme_ocean">Oceano</string>
+    <string name="theme_amber">Âmbar</string>
+    <string name="confirm">Confirmar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="save">Salvar</string>
+    <string name="back">Voltar</string>
+    <string name="close">Fechar</string>
+    <string name="delete">Excluir</string>
+    <string name="delete_model">Excluir modelo</string>
+    <string name="delete_confirm">Excluir os %s modelos selecionados? Isso não pode ser desfeito.</string>
+    <string name="got_it">Entendi!</string>
+    <string name="yes">Sim</string>
+    <string name="about_app">Aviso</string>
+    <string name="must_read">Este app roda geração de imagens com Stable Diffusion na CPU/GPU e em algumas NPUs Qualcomm.\n\nModelos SD1.5 funcionam em NPUs Snapdragon com arquitetura Hexagon V68 ou mais nova.\n\nModelos SDXL funcionam no Snapdragon 8 Gen 3 e aparelhos mais novos.\n\nSe o seu chip não está nessa lista, só dá para rodar na CPU/GPU.\n\nO projeto é open source em https://github.com/xororz/local-dream, onde você pode ver o código ou abrir issues\n\nDocumentação: https://ld.chino.icu</string>
+    <string name="help">Ajuda</string>
+    <string name="more_options">Mais</string>
+
+    <!-- Model List Screen -->
+    <string name="available_models">Modelos disponíveis</string>
+    <plurals name="selected_items">
+        <item quantity="one">%d selecionado</item>
+        <item quantity="other">%d selecionados</item>
+        <item quantity="many">%d selecionados</item>
+    </plurals>
+    <string name="download">Baixar</string>
+    <string name="download_from">Baixar de</string>
+    <string name="download_settings_hint">Baixar do huggingface ou de outro mirror</string>
+    <string name="source_huggingface">Hugging Face</string>
+    <string name="source_hf_mirror">hf-mirror</string>
+    <string name="source_custom">Personalizado</string>
+    <string name="downloaded">Baixado</string>
+    <string name="delete_success">Excluído</string>
+    <string name="delete_failed">Erro ao excluir</string>
+    <string name="cannot_download">Não é possível baixar</string>
+    <string name="cannot_download_hint">Um modelo está sendo baixado, aguarde.</string>
+    <string name="download_model">Baixar modelo</string>
+    <string name="download_model_hint">Baixar %s ? Não saia do app durante o download.\n\nNo momento, o download de modelos NPU está liberado para todos os chips Qualcomm, mas chips mais antigos podem não conseguir rodá-los.</string>
+    <string name="download_done">Download concluído</string>
+    <string name="unsupport_npu">Seu aparelho não é compatível. Tente o modelo de CPU.</string>
+    <string name="cpu_models">Modelos CPU</string>
+    <string name="npu_models">Modelos NPU</string>
+    <string name="dit_models">Modelos DiT</string>
+    <string name="no_cpu_models">Nenhum modelo</string>
+    <string name="no_npu_models">Nenhum modelo</string>
+    <string name="no_dit_models">Nenhum modelo</string>
+    <string name="img2img_hint">Usar o img2img. Desligue se não precisar ou se der algum problema. Desligar também desativa a proporção do SDXL e o UltraFix.</string>
+    <string name="show_process">Mostrar o processo de geração</string>
+    <string name="show_process_hint">Só funciona com modelos NPU. Mostra as etapas intermediárias da geração. Deixa a geração mais lenta. Ative só se tiver curiosidade sobre o processo.</string>
+    <string name="preview_stride">Intervalo da prévia</string>
+    <plurals name="preview_stride_hint">
+        <item quantity="one">Atualiza a prévia a cada %d step (1–10).</item>
+        <item quantity="other">Atualiza a prévia a cada %d steps (1–10).</item>
+        <item quantity="many">Atualiza a prévia a cada %d steps (1–10).</item>
+    </plurals>
+    <!-- Crop Screen -->
+    <string name="crop_image">Recortar imagem</string>
+    <string name="crop_hint">Arraste para ajustar a área do recorte</string>
+
+    <!-- Inpaint Screen -->
+    <string name="set_inpaint_area">Definir área do inpaint</string>
+    <string name="inpaint_hint">Pinte as áreas onde quer fazer inpaint</string>
+    <string name="undo">Desfazer</string>
+    <string name="redo">Refazer</string>
+    <string name="brush_color">Cor do pincel</string>
+
+    <!-- Run Screen -->
+    <string name="prompt_settings">Prompts</string>
+    <string name="advanced_settings">Avançado</string>
+    <string name="advanced_settings_title">Configurações avançadas</string>
+    <string name="image_prompt">Prompt da imagem</string>
+    <string name="negative_prompt">Prompt negativo</string>
+    <string name="generate_image">Gerar</string>
+    <string name="generating">Gerando imagem</string>
+    <string name="no_results">Nenhum resultado ainda</string>
+    <string name="no_results_hint">Crie uma imagem primeiro~</string>
+    <string name="go_to_generate">Criar</string>
+    <string name="prompt_tab">Prompt</string>
+    <string name="result_tab">Resultado</string>
+    <string name="history_tab">Histórico</string>
+    <string name="no_history">Nenhum histórico de geração</string>
+    <string name="no_history_hint">O histórico é salvo depois de cada geração</string>
+    <plurals name="selected_items_count">
+        <item quantity="one">%d item selecionado</item>
+        <item quantity="other">%d itens selecionados</item>
+        <item quantity="many">%d itens selecionados</item>
+    </plurals>
+    <string name="generation_params_title">Parâmetros de geração</string>
+    <string name="delete_image">Excluir imagem</string>
+    <string name="delete_image_confirm">Tem certeza de que quer excluir esta imagem? Isso não pode ser desfeito.</string>
+    <string name="deleted">Excluído</string>
+    <string name="delete_failed_message">Falha ao excluir</string>
+    <string name="batch_delete">Excluir em lote</string>
+    <plurals name="batch_delete_confirm">
+        <item quantity="one">Tem certeza de que quer excluir %d imagem selecionada? Isso não pode ser desfeito.</item>
+        <item quantity="other">Tem certeza de que quer excluir %d imagens selecionadas? Isso não pode ser desfeito.</item>
+        <item quantity="many">Tem certeza de que quer excluir %d imagens selecionadas? Isso não pode ser desfeito.</item>
+    </plurals>
+    <string name="batch_save">Salvar em lote</string>
+    <plurals name="batch_save_confirm">
+        <item quantity="one">Salvar %d imagem selecionada na galeria?</item>
+        <item quantity="other">Salvar %d imagens selecionadas na galeria?</item>
+        <item quantity="many">Salvar %d imagens selecionadas na galeria?</item>
+    </plurals>
+    <string name="batch_saving_progress">Salvando %1$d / %2$d</string>
+    <plurals name="saved_count">
+        <item quantity="one">%d imagem salva</item>
+        <item quantity="other">%d imagens salvas</item>
+        <item quantity="many">%d imagens salvas</item>
+    </plurals>
+    <string name="saved_count_with_failed" tools:ignore="PluralsCandidate">%1$d imagens salvas, %2$d falharam</string>
+    <plurals name="deleted_count">
+        <item quantity="one">%d item excluído</item>
+        <item quantity="other">%d itens excluídos</item>
+        <item quantity="many">%d itens excluídos</item>
+    </plurals>
+    <string name="deleted_count_with_failed" tools:ignore="PluralsCandidate">%1$d itens excluídos, %2$d falharam</string>
+    <string name="confirm_exit">Confirmar saída</string>
+    <string name="confirm_exit_hint">Há uma geração em andamento. Sair mesmo assim?</string>
+    <string name="interrupt_generation">Interromper geração</string>
+    <string name="interrupt_generation_hint">Há uma geração em andamento. Interromper?</string>
+    <string name="generation_interrupted">Geração interrompida</string>
+    <string name="reset">Redefinir</string>
+    <string name="reset_hint">Redefinir todos os parâmetros? Isso não pode ser desfeito. </string>
+    <string name="media_permission_hint">A permissão de mídia é necessária para o img2img</string>
+    <string name="backend_failed">Falha ao iniciar o backend. Talvez seu aparelho não seja compatível.</string>
+
+    <!-- Parameter Settings -->
+    <string name="generation_params">Parâmetros de geração</string>
+    <string name="steps">Steps: %d</string>
+    <string name="image_size">Tamanho da imagem: %1$dx%2$d</string>
+    <string name="width">Largura</string>
+    <string name="height">Altura</string>
+    <string name="random_seed">Seed aleatória (opcional)</string>
+    <string name="use_last_seed">Usar a última seed (%s)</string>
+    <string name="batch_count">Quantidade: %d</string>
+    <string name="reproduce">Reproduzir</string>
+    <string name="reproduce_params_title">Reproduzir parâmetros</string>
+    <string name="reproduce_params_hint">Escolha os campos que serão aplicados na página do prompt.</string>
+    <string name="select_all">Selecionar tudo</string>
+    <string name="deselect_all">Desmarcar tudo</string>
+    <string name="result_params">steps: %1$s / CFG: %2$.1f / seed: %3$s</string>
+    <string name="result_params_2">tamanho: %1$sx%2$s / tempo: %3$s / %4$s</string>
+    <string name="params_detail">Detalhes</string>
+    <string name="basic_params">Básico</string>
+    <string name="basic_model">Modelo: %s</string>
+    <string name="basic_step">Steps: %d</string>
+    <string name="basic_size">Tamanho: %1$dx%2$d</string>
+    <string name="basic_seed">Seed: %s</string>
+    <string name="basic_runtime">Runtime: %s</string>
+    <string name="basic_mode">Modo: %s</string>
+    <string name="basic_denoise">Denoise strength: %.2f</string>
+    <string name="basic_time">Tempo: %s</string>
+    <string name="opencl_warning">Aviso do runtime de GPU: a primeira execução em cada resolução é lenta porque gera arquivos de cache. As próximas são bem mais rápidas.</string>
+
+    <!-- Parameter Share -->
+    <string name="share">Compartilhar</string>
+    <string name="share_params_title">Compartilhar parâmetros</string>
+    <string name="share_params_hint">Escolha os campos para copiar. O resultado vai para a área de transferência, para você colar onde quiser.</string>
+    <string name="share_use_base64">Codificação Base64</string>
+    <string name="share_use_base64_hint">Codifica o conteúdo em Base64.</string>
+    <string name="share_copy_to_clipboard">Copiar</string>
+    <string name="share_copied">Parâmetros copiados para a área de transferência</string>
+    <string name="share_field_steps">Steps</string>
+    <string name="share_field_cfg">CFG</string>
+    <string name="share_field_seed">Seed</string>
+    <string name="share_field_denoise">Denoise strength</string>
+    <string name="share_field_mode">Modo</string>
+    <string name="import_params_title">Aplicar parâmetros compartilhados</string>
+    <string name="import_params_hint">Foram encontrados parâmetros compartilhados na área de transferência. Escolha quais campos aplicar.</string>
+    <string name="import_clear_clipboard">Limpar a área de transferência ao fechar</string>
+    <string name="import_clear_clipboard_hint">Remove o conteúdo compartilhado da área de transferência quando este diálogo fechar, aplicando ou cancelando.</string>
+    <string name="import_apply">Aplicar</string>
+    <string name="import_applied">Parâmetros aplicados</string>
+    <string name="import_from_clipboard">Importar da área de transferência</string>
+    <string name="import_no_params">Nenhum parâmetro compartilhado na área de transferência</string>
+
+    <!-- Error Messages -->
+    <string name="error_download_failed">Falha no download: %s</string>
+    <string name="error_request_failed">Falha na requisição: %s</string>
+    <string name="unknown_error">erro desconhecido</string>
+
+    <!-- Info Messages -->
+    <string name="image_saved">Imagem salva na galeria</string>
+    <string name="loading_model">Carregando modelo…</string>
+
+    <!-- File Manager -->
+    <string name="file_manager">Gerenciador de arquivos</string>
+    <string name="delete_file">Excluir arquivo</string>
+    <string name="delete_file_confirm">Tem certeza de que quer excluir o arquivo \"%s\"?</string>
+    <string name="file_deleted">Arquivo excluído</string>
+    <string name="no_model_files">Nenhum arquivo de modelo encontrado</string>
+    <string name="loading_files">Carregando arquivos…</string>
+    <string name="back_to_folders">Voltar às pastas</string>
+    <string name="model_folder">Modelo: %s</string>
+    <plurals name="file_count">
+        <item quantity="one">%d arquivo</item>
+        <item quantity="other">%d arquivos</item>
+        <item quantity="many">%d arquivos</item>
+    </plurals>
+    <string name="clear_cache">Limpar cache</string>
+    <string name="clear_cache_with_size">Limpar cache (%s)</string>
+    <string name="clear_cache_confirm">Limpar a pasta de cache deste modelo? Os embeddings de prompt e os kernels OpenCL em cache serão gerados de novo no próximo uso.</string>
+    <string name="cache_cleared">Cache limpo</string>
+
+    <!-- Settings -->
+    <string name="download_source">Origem do download</string>
+    <string name="feature_settings">Recursos</string>
+
+    <!-- Custom Model -->
+    <string name="add_custom_model">Adicionar modelo personalizado</string>
+    <string name="add_custom_npu_model">Importar ZIP de modelo</string>
+    <string name="custom_model">Modelo personalizado</string>
+    <string name="custom_model_name">Nome do modelo</string>
+    <string name="custom_model_name_hint">Digite o nome do modelo</string>
+    <string name="custom_model_id_reserved">Esse nome conflita com um modelo embutido. Escolha outro.</string>
+    <string name="pin_to_top">Fixar no topo</string>
+    <string name="unpin_from_top">Desafixar</string>
+    <string name="rename">Renomear</string>
+    <string name="rename_model">Renomear modelo</string>
+    <string name="rename_model_label">Novo nome</string>
+    <string name="rename_name_exists">Já existe um modelo com esse nome.</string>
+    <string name="rename_success">Renomeado</string>
+    <string name="rename_failed">Falha ao renomear</string>
+    <string name="select_model_file">Selecionar arquivo do modelo</string>
+    <string name="select_zip_file">Selecionar arquivo ZIP</string>
+    <string name="zip_file_selected">Arquivo ZIP selecionado</string>
+    <string name="file_selected">Arquivo selecionado</string>
+    <string name="add_model">Adicionar modelo</string>
+    <string name="custom_model_hint">Só aceita arquivos safetensors de arquitetura SD1.5</string>
+    <string name="custom_npu_model_hint">Importe um ZIP de modelo QNN ou SDXL MNN. QNN exige um aparelho Qualcomm compatível. MNN roda na CPU/GPU. Você encontra alguns modelos em https://huggingface.co/xororz/sd-qnn e https://huggingface.co/xororz/sdxl-qnn ou em outros lugares do Hugging Face.</string>
+    <string name="converting">Convertendo…</string>
+    <string name="model_conversion_success">Modelo convertido!</string>
+    <string name="model_conversion_failed">Falha na conversão: %s</string>
+    <string name="npu_model_added_success">Modelo adicionado!</string>
+    <string name="npu_model_add_failed">Falha ao importar o modelo: %s</string>
+    <string name="preparing_model">Preparando modelo…</string>
+    <string name="preparing_npu_model">Preparando modelo…</string>
+    <string name="extracting_zip_file">Extraindo arquivo ZIP…</string>
+    <string name="copying_model_file">Copiando arquivo do modelo…</string>
+    <string name="copying_base_files">Copiando arquivos base…</string>
+    <string name="converting_model">Convertendo modelo…</string>
+    <string name="clip_skip_hint">Defina as camadas de CLIP skip (1 ou 2)</string>
+    <string name="lora_files_optional">Arquivos LoRA (opcional)</string>
+    <string name="add_lora_file">Adicionar arquivo LoRA</string>
+    <string name="selected_lora_files">Arquivos LoRA selecionados:</string>
+    <string name="copying_lora_files">Copiando arquivos LoRA…</string>
+    <string name="lora_weight">Peso:</string>
+
+    <!-- Embedding Manager -->
+    <string name="embedding_manager">Gerenciador de embeddings</string>
+    <string name="no_embeddings">Nenhum arquivo de embedding encontrado</string>
+    <string name="import_embedding">Importar embedding</string>
+    <string name="delete_embedding">Excluir embedding</string>
+    <string name="delete_embedding_confirm">Tem certeza de que quer excluir o embedding \"%s\"?</string>
+    <string name="embedding_deleted">Embedding excluído</string>
+    <string name="embedding_imported">Embedding importado</string>
+    <string name="embedding_import_failed">Falha ao importar o embedding: %s</string>
+    <string name="only_safetensors_supported">Só arquivos .safetensors são aceitos</string>
+
+    <!-- Upscaler -->
+    <string name="select_upscaler_model">Selecionar modelo de upscale</string>
+    <string name="upscale_scale_label">Escala</string>
+    <string name="upscale_factor">%d×</string>
+    <string name="upscale_scale_hint">O modelo sempre amplia em 4×; 2× e 3× só redimensionam esse resultado para outros usos.</string>
+    <string name="upscaling_image">Ampliando imagem…</string>
+    <string name="upscale_failed">Falha no upscale: %s</string>
+
+    <!-- UltraFix -->
+    <string name="ultrafix">UltraFix</string>
+    <string name="ultrafix_confirm_hint">O UltraFix refina esta imagem com img2img em blocos. Recomenda-se uma razão de denoise steps / steps de 0,5 ou menos. Funciona melhor em modelos de anime, então use só neles e só nas suas imagens favoritas. O processo demora; evite rodar com o aparelho quente.</string>
+    <string name="ultrafix_seed_random">Aleatória</string>
+    <string name="ultrafix_denoise_steps_label">Denoise steps: %d</string>
+    <string name="ultrafix_source_info">Imagem: %1$dx%2$d  ·  Bloco: %3$dpx</string>
+    <string name="ultrafix_restore_defaults">Restaurar padrões</string>
+    <string name="ultrafix_other_params_hint">Prompt, CFG, scheduler e seed vêm da página do prompt; edite lá.</string>
+    <string name="ultrafix_preparing">Preparando o UltraFix…</string>
+    <string name="ultrafix_failed">Falha no UltraFix: %s</string>
+    <string name="ultrafix_quality_denoise_desc">Faz o denoise com este prompt: %s. Desligue para usar o prompt da página do prompt.</string>
+    <string name="download_model_first">Baixe o modelo primeiro</string>
+    <string name="upscaler_anime">Anime</string>
+    <string name="upscaler_anime_desc">Otimizado para imagens de anime e desenho</string>
+    <string name="upscaler_realistic">Realista</string>
+    <string name="upscaler_realistic_desc">Otimizado para fotos realistas</string>
+    <string name="image_upscale">Upscale de imagem</string>
+    <string name="upscale">Ampliar</string>
+    <string name="add_image">Adicionar imagem</string>
+    <string name="clear_image">Limpar imagem</string>
+    <string name="save_image">Salvar imagem</string>
+    <string name="selected_image">Imagem selecionada</string>
+    <string name="upscaled_image">Imagem ampliada</string>
+    <string name="click_to_add_image">Toque para adicionar uma imagem para ampliar</string>
+    <string name="image_resolution_too_large">Resolução muito grande (%1$d×%2$d). Escolha uma imagem menor que 2048x2048</string>
+    <string name="failed_to_load_image">Falha ao carregar a imagem: %s</string>
+    <string name="model_download_channel">Downloads de modelos</string>
+    <string name="model_download_channel_desc">Notificações do progresso de download de modelos</string>
+    <string name="downloading_model">Baixando %s</string>
+    <string name="download_complete">Download concluído</string>
+    <string name="download_failed">Falha no download</string>
+    <string name="download_background_hint">O download continua em segundo plano. Você pode trocar de app.</string>
+    <string name="switch_resolution">Trocar resolução</string>
+    <string name="switch_resolution_hint">Trocar a resolução reinicia o serviço de backend e interrompe a geração atual. Continuar?</string>
+    <string name="resolution">Resolução</string>
+    <string name="aspect_ratio">Proporção</string>
+    <string name="aspect_ratio_custom">Personalizada</string>
+    <string name="aspect_ratio_custom_title">Proporção personalizada</string>
+    <string name="aspect_ratio_custom_hint">Digite dois inteiros positivos (ex.: 21 9)</string>
+    <string name="aspect_ratio_invalid">Proporção inválida. Precisam ser dois inteiros positivos.</string>
+    <string name="scheduler">Scheduler</string>
+    <string name="extracting">Extraindo…</string>
+
+    <!-- History migration -->
+    <string name="migration_title">Importando histórico</string>
+    <string name="migration_subtitle">Na primeira abertura é preciso importar o histórico que você já tem. Mantenha o app aberto até terminar.</string>
+    <string name="migration_progress">%1$d / %2$d</string>
+    <string name="migration_current_model">Modelo atual: %1$s</string>
+    <string name="migration_failed_title">Falha na importação</string>
+    <string name="migration_retry">Tentar de novo</string>
+    <string name="migration_skip">Pular</string>
+    <string name="migration_skip_warning">Se pular, os registros antigos do histórico não vão aparecer na nova tela de histórico.</string>
+
+    <!-- History backup -->
+    <string name="backup_restore">Backup e restauração</string>
+    <string name="backup_hint">Exporte seu histórico de geração (imagens e parâmetros), os projetos do canvas e as configurações do canvas para um arquivo zip, ou importe um backup para juntar ao que você já tem. Duplicados são ignorados automaticamente.</string>
+    <string name="backup_stats_all">Tudo: %1$d imagens (%2$s)</string>
+    <string name="backup_stats_favorites">Favoritas: %1$d imagens (%2$s)</string>
+    <string name="backup_scope_all">Tudo</string>
+    <string name="backup_scope_favorites">Só favoritas</string>
+    <string name="backup_export">Exportar</string>
+    <string name="backup_import">Importar</string>
+    <string name="backup_preparing">Preparando…</string>
+    <string name="backup_exporting">Exportando %1$d / %2$d</string>
+    <string name="backup_importing">Importando %1$d / %2$d</string>
+    <string name="backup_export_done">%1$d imagens exportadas</string>
+    <string name="backup_import_done">%1$d importadas, %2$d duplicadas ignoradas, %3$d falharam</string>
+    <string name="backup_import_orphan_note">%1$d modelos deste backup não estão instalados. Os registros foram importados e podem ser vistos pelo filtro do histórico (Todos os modelos).</string>
+    <string name="backup_failed">A operação falhou: %1$s</string>
+    <string name="backup_invalid_file">Não é um arquivo de backup válido do Local Dream</string>
+    <string name="backup_stats_canvas">Canvas: %1$d projetos (%2$s) e configurações do canvas</string>
+    <string name="backup_compat_upstream">Compatível com o Local Dream original</string>
+    <string name="backup_compat_upstream_hint">Exporta só o histórico, sem projetos nem configurações do canvas. Um backup normal também importa no app original, mas leva junto os dados do canvas sem usá-los.</string>
+    <string name="backup_export_done_canvas">%1$d imagens e %2$d projetos do canvas exportados</string>
+    <string name="backup_import_done_canvas">Canvas: %1$d projetos importados, %2$d duplicados ignorados, %3$d falharam</string>
+    <string name="backup_import_canvas_settings">Configurações do canvas restauradas</string>
+    <string name="delete_keep_history">Manter o histórico de geração</string>
+    <string name="delete_keep_history_hint">O histórico continua visível na página de histórico depois que o modelo é excluído</string>
+
+    <!-- History filter -->
+    <string name="history_filter_apply">Aplicar</string>
+    <string name="history_filter_reset">Redefinir</string>
+    <string name="history_filter_models">Modelos</string>
+    <string name="history_filter_current_model_only">Só o modelo atual</string>
+    <string name="history_filter_all_models">Todos os modelos</string>
+    <string name="history_filter_all">Tudo</string>
+    <string name="history_filter_favorites">Favoritas</string>
+    <string name="history_filter_favorite">Favoritadas</string>
+    <string name="history_filter_not_favorite">Não favoritadas</string>
+    <string name="history_filter_modes">Modos</string>
+    <string name="history_filter_time_range">Período</string>
+    <string name="history_filter_time_any">Qualquer data</string>
+    <string name="history_filter_size">Tamanho</string>
+    <string name="history_filter_scheduler">Scheduler</string>
+    <string name="history_filter_device">Dispositivo</string>
+    <string name="history_filter_prompt_search">Prompt contém…</string>
+    <string name="history_filter_sort">Ordenar</string>
+    <string name="history_filter_sort_desc">Mais novas primeiro</string>
+    <string name="history_filter_sort_asc">Mais antigas primeiro</string>
+    <string name="history_view_filter">Filtrar</string>
+
+    <!-- Permissions -->
+    <string name="permission_storage_required">A permissão de armazenamento é necessária para salvar as imagens geradas</string>
+    <string name="permission_notification_required">A permissão de notificação é necessária para gerar imagens em segundo plano</string>
+
+    <!-- Run Screen extras -->
+    <string name="gpu_runtime_warning_title">Aviso do runtime de GPU</string>
+    <string name="please_crop_first">Recorte a imagem primeiro</string>
+    <string name="no_image_available">Nenhuma imagem disponível</string>
+    <string name="image_load_failed">Falha ao carregar a imagem</string>
+
+    <!-- Report -->
+    <string name="report">Denunciar</string>
+    <string name="report_image_confirm">Denuncie esta imagem se achar que ela é inadequada. Os parâmetros e a imagem serão enviados ao servidor para análise.</string>
+    <string name="report_success">Obrigado pela denúncia.</string>
+    <string name="report_failed">Falha ao denunciar</string>
+
+    <!-- Error messages extras -->
+    <string name="error_title">Erro</string>
+    <string name="ok">OK</string>
+    <string name="error_with_detail">Erro: %s</string>
+    <string name="save_failed_detail">Falha ao salvar: %s</string>
+    <string name="img2img_failed_detail">Falha no img2img: %s</string>
+    <string name="failed_to_start_backend">Falha ao iniciar o backend: %s</string>
+    <string name="dit_engine_missing">Motor DiT não instalado</string>
+    <string name="z_image_turbo_description">DiT 6B, 8 steps.</string>
+    <string name="flux2_klein_description">DiT 4B, 4 steps.</string>
+    <string name="flux2_klein_9b_description">DiT 9B, 4 steps.</string>
+    <string name="flux3_description">DiT 6B, 16 steps.</string>
+    <string name="qwen_image_2_1_description">DiT FP8 com Qwen3-VL-8B, 20 steps.</string>
+    <string name="qwen_image_2_1_turbo_description">DiT FP8 com Qwen3-VL-8B, 8 steps.</string>
+    <string name="krea_2_turbo_description">DiT 12B, 8 steps.</string>
+    <string name="flux_edit">Editar</string>
+    <string name="flux_base_image">Base</string>
+    <string name="flux_reference_images">Referência</string>
+    <string name="flux_add_reference">Adicionar imagem de referência</string>
+    <string name="executable_not_found">Executável não encontrado: %s</string>
+    <string name="cannot_open_file">Não foi possível abrir o arquivo selecionado</string>
+    <string name="only_qualcomm_npu">Só aparelhos Qualcomm aceitam modelos NPU personalizados</string>
+    <string name="conversion_need_sd15">Use um modelo safetensors SD1.5</string>
+    <string name="converting_with_line">Convertendo: %s</string>
+
+    <!-- Temp file cleanup -->
+    <string name="clean_temp_files">Limpar arquivos temporários</string>
+    <string name="clean_temp_confirm">Liberar %s de arquivos temporários (downloads interrompidos e buffers de trabalho)?</string>
+    <string name="clean_temp_none">Nenhum arquivo temporário para limpar</string>
+    <string name="clean_temp_done">%s liberados</string>
+
+    <!-- Device link (remote control between two devices) -->
+    <string name="remote_link">Conexão entre aparelhos</string>
+    <string name="remote_host_section">Modo host (este aparelho roda os modelos)</string>
+    <string name="remote_host_hint">Deixa outro aparelho com o Local Dream na mesma rede ver os modelos deste aparelho e gerar imagens com eles. Com o modo host ligado, a porta de controle (8808) e a porta de geração (8081) ficam abertas para a sua rede local.</string>
+    <string name="remote_host_start">Entrar no modo host</string>
+    <string name="remote_host_stop">Sair do modo host</string>
+    <string name="remote_host_addresses">Endereço deste aparelho</string>
+    <string name="remote_no_network">Nenhum endereço de rede encontrado. Conecte-se ao Wi-Fi primeiro.</string>
+    <string name="remote_host_serving">Servindo o modelo: %1$s</string>
+    <string name="remote_host_no_model">Nenhum modelo carregado</string>
+    <string name="remote_connect_section">Conectar a um host (este aparelho é o controle remoto)</string>
+    <string name="remote_connect_hint">Digite o endereço mostrado no aparelho host. A lista vai mostrar os modelos do host, e a geração roda nele.</string>
+    <string name="remote_host_field">Endereço do host</string>
+    <string name="remote_connect">Conectar</string>
+    <string name="remote_disconnect">Desconectar</string>
+    <string name="remote_refresh_models">Atualizar lista de modelos</string>
+    <string name="remote_refresh_models_short">Atualizar</string>
+    <string name="remote_connect_failed_unreachable">Não foi possível alcançar o host. Confira o endereço e se o modo host está ligado.</string>
+    <string name="remote_connected_to">Conectado a %1$s</string>
+    <string name="remote_banner_connected">Modelos de %1$s</string>
+    <string name="remote_banner_offline">Host inacessível</string>
+    <string name="remote_select_failed">Falha ao iniciar o modelo no host</string>
+    <string name="remote_port_hint">Porta de controle padrão: %1$d. Use endereço:porta para trocar.</string>
+    <string name="remote_host_notify_title">Modo host ativo</string>
+    <string name="remote_host_notify">O Local Dream pode ser controlado pela sua rede local</string>
+    <string name="remote_screen_shield">Tela preta (manter acordado)</string>
+    <string name="remote_screen_shield_exit">Toque para sair</string>
+    <string name="ultrafix_import_action">Importar imagem local</string>
+    <string name="ultrafix_import_title">Importar imagem para o UltraFix</string>
+    <string name="ultrafix_import_requirement">Lado maior até %1$d. O UltraFix precisa do lado maior acima de 1024 e do lado menor com pelo menos %2$d; imagens menores podem ser ampliadas antes.</string>
+    <string name="ultrafix_import_output">Tamanho final: %1$d×%2$d</string>
+    <string name="ultrafix_import_scale">Escala: %1$d%%</string>
+    <string name="ultrafix_longpress_hint">Dica: segure o botão de upscale ou de UltraFix para importar uma imagem local.</string>
+    <string name="draw_title">Desenho</string>
+    <string name="draw_done">Pronto</string>
+    <string name="draw_original_background">Fundo original</string>
+    <string name="draw_clear_title">Limpar desenho</string>
+    <string name="draw_clear_message">Tem certeza de que quer apagar todos os desenhos?</string>
+    <string name="draw_clear_confirm">Limpar</string>
+    <string name="draw_size">Tamanho: %1$d</string>
+    <string name="draw_transparency">Transp.: %1$d%%</string>
+    <string name="draw_blur">Desfoque: %1$d</string>
+    <string name="draw_pipette">Conta-gotas</string>
+    <string name="draw_eraser">Borracha</string>
+    <string name="draw_new_layer">Nova camada</string>
+    <string name="draw_zoom">Zoom</string>
+    <string name="draw_touch_mode">Modo toque</string>
+    <string name="draw_clear_all">Limpar tudo</string>
+    <string name="draw_select_color">Escolher cor</string>
+    <string name="draw_result">Resultado:</string>
+    <string name="draw_select">Selecionar</string>
+    <!-- Model storage location -->
+    <string name="model_storage">Armazenamento dos modelos</string>
+    <string name="model_storage_internal">Armazenamento do app</string>
+    <string name="model_storage_internal_hint">Privado do Local Dream. Apagado quando o app é desinstalado.</string>
+    <string name="model_storage_public_hint">Visível nos gerenciadores de arquivos e mantido depois de desinstalar. Outros apps com acesso a todos os arquivos podem usar esses modelos sem baixar de novo. Exige acesso a todos os arquivos.</string>
+    <string name="model_storage_public_unsupported">Exige Android 11 ou mais novo.</string>
+    <string name="model_storage_access_lost">O acesso a todos os arquivos foi desligado, então os modelos na pasta Download não podem ser lidos.</string>
+    <string name="model_storage_grant">Permitir acesso</string>
+    <string name="model_storage_no_access">O acesso a todos os arquivos não foi concedido</string>
+    <string name="model_storage_busy">Espere os downloads e a geração terminarem primeiro</string>
+    <string name="model_storage_move_title">Mover os modelos?</string>
+    <string name="model_storage_move_confirm">%1$s de modelos e embeddings serão movidos para %2$s. Mantenha o Local Dream aberto até terminar.</string>
+    <string name="model_storage_moving">Movendo modelos…</string>
+    <string name="model_storage_moved">Modelos movidos</string>
+    <string name="model_storage_move_failed">Falha ao mover</string>
+    <string name="model_storage_pending">Uma mudança para %1$s não terminou, então alguns modelos ainda estão no outro local. Escolha um local acima para terminar a mudança ou para trazê-los de volta.</string>
+    <string name="model_storage_name_clash">A pasta Download não diferencia maiúsculas de minúsculas, então estes iriam sobrescrever outro modelo ou embedding: %1$s. Renomeie ou exclua primeiro.</string>
+    <string name="model_storage_conflict">%1$s já contém %2$s. Exclua uma das cópias e tente de novo.</string>
+    <string name="model_storage_moving_blocked">Os modelos estão sendo movidos. Tente de novo quando terminar.</string>
+</resources>
