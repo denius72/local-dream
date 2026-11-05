@@ -925,7 +925,8 @@ private fun OptionsBar(editor: CanvasEditorState, onOpenBrush: () -> Unit, onMes
             }
 
             tool == CanvasTool.HAND -> {
-                Text("Zoom ${(editor.scale * 100).roundToInt()}%", color = BarIcon, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                val rot = editor.rotation.roundToInt().let { if (it > 180) it - 360 else it }
+                Text("Zoom ${(editor.scale * 100).roundToInt()}%" + (if (rot != 0) " · ${rot}°" else ""), color = BarIcon, fontSize = 12.sp, modifier = Modifier.weight(1f))
                 IconButton(onClick = { editor.refit() }) {
                     Icon(Icons.Default.FitScreen, "Fit", tint = BarIcon)
                 }

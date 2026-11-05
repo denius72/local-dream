@@ -34,6 +34,8 @@ private enum class GestureMode { TOOL, VIEW }
 
 private const val ABORT_WINDOW_MS = 280L
 private const val TAP_MAX_MS = 320L
+private const val ROTATE_START_DEG = 12f
+private const val ROTATE_SNAP_DEG = 6f
 
 @Composable
 fun CanvasView(
@@ -88,6 +90,11 @@ fun CanvasView(
                     }
                     if (mode == GestureMode.TOOL && action == null) mode = GestureMode.VIEW
                     var lastTime = start
+                    // Twist of this gesture so far. Rotation waits for a clear
+                    // twist, so a plain pinch zoom never tilts the canvas.
+                    var twist = 0f
+                    var rotating = false
+                    var lastCentroid = Offset.Unspecified
 
                     while (true) {
                         val event = awaitPointerEvent()
@@ -121,6 +128,19 @@ fun CanvasView(
                                     val k = newScale / editor.scale
                                     editor.offset = centroid - (centroid - editor.offset) * k + pan
                                     editor.scale = newScale
+                                    lastCentroid = centroid
+                                    if (pressed >= 2) {
+                                        val rot = event.calculateRotation()
+                                        if (rotating) {
+                                            editor.rotateView(rot, centroid)
+                                        } else {
+                                            twist += rot
+                                            if (abs(twist) > ROTATE_START_DEG) {
+                                                rotating = true
+                                                editor.rotateView(twist, centroid)
+                                            }
+                                        }
+                                    }
                                 }
                                 event.changes.forEach { it.consume() }
                             }
@@ -132,8 +152,15 @@ fun CanvasView(
                         }
                     }
 
+                    // Snap to the nearest quarter turn when close to it.
+                    if (rotating && lastCentroid != Offset.Unspecified) {
+                        val nearest = Math.round(editor.rotation / 90f) * 90f
+                        val diff = nearest - editor.rotation
+                        if (abs(diff) <= ROTATE_SNAP_DEG) editor.rotateView(diff, lastCentroid)
+                    }
+
                     // Two-finger tap undoes, three-finger tap redoes.
-                    if (mode == GestureMode.VIEW && maxPointers >= 2 && lastTime - start < TAP_MAX_MS && travelled < 24f) {
+                    if (mode == GestureMode.VIEW && !rotating && maxPointers >= 2 && lastTime - start < TAP_MAX_MS && travelled < 24f) {
                         if (maxPointers == 2) doc.undo() else doc.redo()
                     }
                 }
@@ -157,6 +184,7 @@ fun CanvasView(
             c.drawColor(0xFF3A3A3A.toInt())
             c.save()
             c.translate(off.x, off.y)
+            c.rotate(editor.rotation)
             c.scale(scale, scale)
 
             paints.paper.color = doc.paperColor
@@ -516,7 +544,7 @@ private class MoveAction(private val editor: CanvasEditorState) : ToolAction() {
     override fun update(event: PointerEvent, down: PointerInputChange) {
         val changes = event.changes
         val t = editor.transform ?: return
-        val pan = event.calculatePan() / editor.scale
+        val pan = editor.screenDeltaToDoc(event.calculatePan())
         val zoom = event.calculateZoom()
         val rot = event.calculateRotation()
         val centroid = event.calculateCentroid(useCurrent = true)

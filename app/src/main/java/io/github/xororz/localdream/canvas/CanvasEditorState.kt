@@ -65,9 +65,11 @@ class CanvasEditorState(context: Context, val doc: CanvasDocument) {
     var fillSampleAll by mutableStateOf(prefs.getBoolean("fill_sample_all", true))
     var maskFeather by mutableStateOf(prefs.getFloat("mask_feather", 8f))
 
-    // View transform: screen = doc * scale + offset.
+    // View transform: screen = rotate(doc * scale, rotation) + offset.
     var scale by mutableFloatStateOf(1f)
     var offset by mutableStateOf(Offset.Zero)
+    /** View rotation in degrees, clockwise on screen. */
+    var rotation by mutableFloatStateOf(0f)
     var viewInitialized = false
     var viewW = 0f
     var viewH = 0f
@@ -169,12 +171,33 @@ class CanvasEditorState(context: Context, val doc: CanvasDocument) {
         }
     }
 
-    fun screenToDoc(p: Offset): Offset = Offset((p.x - offset.x) / scale, (p.y - offset.y) / scale)
+    fun screenToDoc(p: Offset): Offset = screenDeltaToDoc(p - offset)
+
+    /** Converts a screen-space vector (a pan, say) to document space. */
+    fun screenDeltaToDoc(v: Offset): Offset {
+        if (rotation == 0f) return v / scale
+        val r = Math.toRadians(-rotation.toDouble())
+        val c = kotlin.math.cos(r).toFloat()
+        val s = kotlin.math.sin(r).toFloat()
+        return Offset((v.x * c - v.y * s) / scale, (v.x * s + v.y * c) / scale)
+    }
+
+    /** Rotates the view by [degrees] around the screen point [pivot]. */
+    fun rotateView(degrees: Float, pivot: Offset) {
+        if (degrees == 0f) return
+        val r = Math.toRadians(degrees.toDouble())
+        val c = kotlin.math.cos(r).toFloat()
+        val s = kotlin.math.sin(r).toFloat()
+        val v = offset - pivot
+        offset = pivot + Offset(v.x * c - v.y * s, v.x * s + v.y * c)
+        rotation = ((rotation + degrees) % 360f + 360f) % 360f
+    }
 
     fun fitToView(viewW: Float, viewH: Float) {
         val margin = 0.94f
         val s = minOf(viewW / doc.width, viewH / doc.height) * margin
         scale = s
+        rotation = 0f
         offset = Offset((viewW - doc.width * s) / 2f, (viewH - doc.height * s) / 2f)
         viewInitialized = true
     }
