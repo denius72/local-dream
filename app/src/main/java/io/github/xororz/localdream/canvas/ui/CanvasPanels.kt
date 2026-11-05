@@ -1,5 +1,10 @@
 package io.github.xororz.localdream.canvas.ui
 
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import io.github.xororz.localdream.R
@@ -267,29 +272,48 @@ fun LayersPanel(
             .blockTouchesBehind()
             .background(BarBgDark.copy(alpha = 0.97f)),
     ) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(4.dp),
-        ) {
-            PanelIcon(Icons.Default.Add, stringResource(R.string.canvas_new_layer)) {
-                if (doc.addLayer() == null) onMessage(limitMsg)
+        // The buttons don't all fit: fade the edge that has more and show an
+        // arrow there, so it's clear the bar scrolls (tapping it scrolls too).
+        val buttonsScroll = rememberScrollState()
+        val scope = rememberCoroutineScope()
+        val step = with(LocalDensity.current) { 120.dp.toPx() }.toInt()
+        Box(Modifier.fillMaxWidth()) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(buttonsScroll)
+                    .padding(4.dp),
+            ) {
+                PanelIcon(Icons.Default.Add, stringResource(R.string.canvas_new_layer)) {
+                    if (doc.addLayer() == null) onMessage(limitMsg)
+                }
+                PanelIcon(Icons.Default.AddPhotoAlternate, stringResource(R.string.canvas_import_layer)) {
+                    if (doc.canAddLayer()) onImportImage() else onMessage(limitMsg)
+                }
+                PanelIcon(Icons.Default.ControlPointDuplicate, stringResource(R.string.canvas_duplicate)) {
+                    if (!doc.duplicateActive()) onMessage(limitMsg)
+                }
+                PanelIcon(Icons.Default.CallMerge, stringResource(R.string.canvas_merge_down)) {
+                    if (!doc.mergeDown()) onMessage(noBelowMsg)
+                }
+                PanelIcon(Icons.Default.ArrowUpward, stringResource(R.string.canvas_move_up)) { doc.moveActive(1) }
+                PanelIcon(Icons.Default.ArrowDownward, stringResource(R.string.canvas_move_down)) { doc.moveActive(-1) }
+                PanelIcon(Icons.Default.LayersClear, stringResource(R.string.canvas_clear)) { doc.clearActive() }
+                PanelIcon(Icons.Default.Delete, stringResource(R.string.canvas_delete)) {
+                    if (!doc.deleteActive()) onMessage(oneLayerMsg)
+                }
             }
-            PanelIcon(Icons.Default.AddPhotoAlternate, stringResource(R.string.canvas_import_layer)) {
-                if (doc.canAddLayer()) onImportImage() else onMessage(limitMsg)
+            if (buttonsScroll.canScrollBackward) {
+                ScrollHint(
+                    forward = false,
+                    modifier = Modifier.align(Alignment.CenterStart),
+                ) { scope.launch { buttonsScroll.animateScrollTo(buttonsScroll.value - step) } }
             }
-            PanelIcon(Icons.Default.ControlPointDuplicate, stringResource(R.string.canvas_duplicate)) {
-                if (!doc.duplicateActive()) onMessage(limitMsg)
-            }
-            PanelIcon(Icons.Default.CallMerge, stringResource(R.string.canvas_merge_down)) {
-                if (!doc.mergeDown()) onMessage(noBelowMsg)
-            }
-            PanelIcon(Icons.Default.ArrowUpward, stringResource(R.string.canvas_move_up)) { doc.moveActive(1) }
-            PanelIcon(Icons.Default.ArrowDownward, stringResource(R.string.canvas_move_down)) { doc.moveActive(-1) }
-            PanelIcon(Icons.Default.LayersClear, stringResource(R.string.canvas_clear)) { doc.clearActive() }
-            PanelIcon(Icons.Default.Delete, stringResource(R.string.canvas_delete)) {
-                if (!doc.deleteActive()) onMessage(oneLayerMsg)
+            if (buttonsScroll.canScrollForward) {
+                ScrollHint(
+                    forward = true,
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                ) { scope.launch { buttonsScroll.animateScrollTo(buttonsScroll.value + step) } }
             }
         }
         doc.activeLayer?.let { layer ->
@@ -327,6 +351,27 @@ fun LayersPanel(
                 )
             }
         }
+    }
+}
+
+/** Fade plus chevron at one end of a horizontally scrolling bar. */
+@Composable
+private fun ScrollHint(forward: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val fade = listOf(BarBgDark.copy(alpha = 0f), BarBgDark, BarBgDark)
+    Box(
+        modifier
+            .width(34.dp)
+            .height(48.dp)
+            .background(Brush.horizontalGradient(if (forward) fade else fade.reversed()))
+            .clickable(onClick = onClick),
+        contentAlignment = if (forward) Alignment.CenterEnd else Alignment.CenterStart,
+    ) {
+        Icon(
+            if (forward) Icons.AutoMirrored.Filled.KeyboardArrowRight else Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+            contentDescription = null,
+            tint = BarIcon,
+            modifier = Modifier.size(22.dp),
+        )
     }
 }
 
