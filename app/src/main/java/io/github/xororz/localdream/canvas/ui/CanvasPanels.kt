@@ -188,11 +188,11 @@ private fun DragValue(text: String, onDrag: (Float) -> Unit, onClick: () -> Unit
         modifier = Modifier
             .fillMaxWidth()
             .pointerInput(Unit) {
-                // Like MediBang: moving away from where the finger went down
-                // raises the value in any direction, moving back toward it
-                // lowers it, and going past that point keeps lowering it.
-                // While the finger is on the outward side the axis follows it
-                // (pure distance); past the origin the axis stays put, so the
+                // Like MediBang: moving away from the centre of this control
+                // raises the value in any direction, moving toward it lowers
+                // it, and going past the centre keeps lowering it. While the
+                // finger is on the outward side the axis follows it (pure
+                // distance); past the centre the axis stays put, so the
                 // projection turns negative instead of growing again.
                 // onDrag takes a dy-style delta (negative = increase).
                 var origin = Offset.Zero
@@ -200,9 +200,11 @@ private fun DragValue(text: String, onDrag: (Float) -> Unit, onClick: () -> Unit
                 var lastS = 0f
                 detectDragGestures(
                     onDragStart = { p ->
-                        origin = p
-                        axis = Offset.Zero
-                        lastS = 0f
+                        origin = Offset(size.width / 2f, size.height / 2f)
+                        val v0 = p - origin
+                        val l0 = v0.getDistance()
+                        axis = if (l0 > 0f) v0 / l0 else Offset.Zero
+                        lastS = l0
                     },
                 ) { change, _ ->
                     change.consume()
