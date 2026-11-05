@@ -149,6 +149,7 @@ fun CanvasView(
         editor.draftRevision
         val maskDraft = editor.maskDraft
         val selection = doc.selection
+        val inpaintMask = doc.inpaintMask
         val hover = editor.hover
 
         drawIntoCanvas { cc ->
@@ -188,11 +189,12 @@ fun CanvasView(
                 }
             }
 
-            // Selection = what the AI will regenerate: tint it red, outline it.
-            if (maskDraft != null) {
-                c.drawBitmap(maskDraft, 0f, 0f, paints.maskTint)
-            } else if (selection != null) {
-                c.drawBitmap(selection.mask, 0f, 0f, paints.maskTint)
+            // Inpaint mask = what the AI will regenerate: tint it red.
+            (maskDraft ?: inpaintMask?.mask)?.let { c.drawBitmap(it, 0f, 0f, paints.maskTint) }
+
+            // Selection: dim the outside, outline the inside.
+            if (selection != null) {
+                c.drawBitmap(selection.outsideOverlay, 0f, 0f, paints.selectionTint)
                 selection.outline?.let { path ->
                     val shown = if (transform != null && transform.selectionBefore === selection) {
                         Path(path).apply { transform(transform.matrix) }
@@ -238,6 +240,7 @@ private class CanvasPaints {
     val saveLayer = Paint()
     val stroke = Paint(Paint.FILTER_BITMAP_FLAG)
     val dstOut = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
+    val selectionTint = Paint().apply { color = 0x553D6BFF }
     val maskTint = Paint().apply { color = 0x66FF3B30 }
     val antsWhite = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -530,11 +533,11 @@ private class MoveAction(private val editor: CanvasEditorState) : ToolAction() {
     override fun cancel() = Unit
 }
 
-/** Paints (or erases) the inpaint mask, which is the document selection. */
+/** Paints (or erases) the inpaint mask ([CanvasDocument.inpaintMask]). */
 private class MaskBrushAction(private val editor: CanvasEditorState, down: PointerInputChange) : ToolAction() {
     private val doc = editor.doc
     private val mask: android.graphics.Bitmap =
-        doc.selection?.mask?.copy(android.graphics.Bitmap.Config.ALPHA_8, true)
+        doc.inpaintMask?.mask?.copy(android.graphics.Bitmap.Config.ALPHA_8, true)
             ?: Selection.empty(doc.width, doc.height)
     private val canvas = android.graphics.Canvas(mask)
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -565,7 +568,7 @@ private class MaskBrushAction(private val editor: CanvasEditorState, down: Point
 
     override fun end(change: PointerInputChange) {
         editor.maskDraft = null
-        doc.selection = Selection.fromMask(mask, null)
+        doc.inpaintMask = Selection.fromMask(mask, null)
         doc.redraw()
     }
 

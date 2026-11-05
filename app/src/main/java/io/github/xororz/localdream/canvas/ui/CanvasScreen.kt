@@ -223,9 +223,9 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
         val blank = doc.isBlank()
         if (!blank && !host.canImg2img) toast("img2img is disabled for this model: generating from the prompt only")
         val useImage = !blank && host.canImg2img
-        val sel = doc.selection
+        val sel = doc.inpaintMask
         val mask = if (useImage && sel != null) {
-            if (host.canInpaint) sel.toInpaintMask(editor.maskFeather) else null.also { toast("This model does not use masks; the selection was ignored") }
+            if (host.canInpaint) sel.toInpaintMask(editor.maskFeather) else null.also { toast("This model does not use masks; the inpaint mask was ignored") }
         } else {
             null
         }
@@ -366,10 +366,10 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                     editor.selectTool(CanvasTool.ERASER)
                 }
                 // The magic button, labelled with what it will run.
-                val modeLabel = remember(doc.version, doc.selection, host.canImg2img) {
+                val modeLabel = remember(doc.version, doc.inpaintMask, host.canImg2img) {
                     when {
                         !host.canImg2img || doc.isBlank() -> "TXT2IMG"
-                        doc.selection != null && host.canInpaint -> "INPAINT"
+                        doc.inpaintMask != null && host.canInpaint -> "INPAINT"
                         else -> "IMG2IMG"
                     }
                 }
@@ -436,6 +436,10 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                 "all" -> doc.selection = Selection.all(doc.width, doc.height)
                 "none" -> doc.selection = null
                 "invert" -> doc.selection = Selection.invert(doc.selection, doc.width, doc.height)
+                "to_mask" -> doc.selection?.let {
+                    doc.inpaintMask = it
+                    toast("Selection copied to the inpaint mask")
+                }
                 "cut" -> editor.cutSelection()
                 "copy" -> if (editor.copySelection()) toast("Copied")
                 "paste" -> when (editor.paste()) {
@@ -627,8 +631,8 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                     Text(
                         when {
                             !host.canImg2img -> "img2img is disabled: the canvas generates from the prompt only."
-                            doc.selection != null && host.canInpaint -> "A selection is active: only the selected area will be regenerated (inpaint)."
-                            else -> "The whole drawing is sent as img2img. Empty canvas = txt2img. To regenerate only part of it, paint over it with the Inpaint mask tool (band-aid icon) or make a selection."
+                            doc.inpaintMask != null && host.canInpaint -> "An inpaint mask is painted: only the red area will be regenerated (inpaint)."
+                            else -> "The whole drawing is sent as img2img. Empty canvas = txt2img. To regenerate only part of it, paint over it with the Inpaint mask tool (band-aid icon), or use Selection → Use as inpaint mask."
                         },
                         style = MaterialTheme.typography.bodySmall,
                     )
@@ -774,7 +778,7 @@ private fun OptionsBar(editor: CanvasEditorState, onOpenBrush: () -> Unit, onMes
                     colors = SliderDefaults.colors(thumbColor = Color.White, activeTrackColor = Color(0xFFFF3B30)),
                 )
                 Chip("Clear", selected = false) {
-                    doc.selection = null
+                    doc.inpaintMask = null
                     doc.redraw()
                 }
             }

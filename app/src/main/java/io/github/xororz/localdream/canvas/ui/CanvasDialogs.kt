@@ -381,6 +381,7 @@ fun SelectionMenuDialog(
                 MenuRow("Select all") { onAction("all") }
                 MenuRow("Deselect", enabled = hasSel) { onAction("none") }
                 MenuRow("Invert selection") { onAction("invert") }
+                MenuRow("Use as inpaint mask", enabled = hasSel) { onAction("to_mask") }
                 HorizontalDivider()
                 MenuRow("Cut") { onAction("cut") }
                 MenuRow("Copy") { onAction("copy") }

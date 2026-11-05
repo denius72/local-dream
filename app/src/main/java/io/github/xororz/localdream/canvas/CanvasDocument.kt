@@ -70,6 +70,9 @@ class CanvasDocument(val width: Int, val height: Int) {
 
     var selection by mutableStateOf<Selection?>(null)
 
+    /** Area the AI regenerates (inpaint). Separate from [selection], which is for editing. */
+    var inpaintMask by mutableStateOf<Selection?>(null)
+
     private val undoStack = ArrayDeque<UndoOp>()
     private val redoStack = ArrayDeque<UndoOp>()
     var canUndo by mutableStateOf(false)
@@ -395,6 +398,7 @@ class CanvasDocument(val width: Int, val height: Int) {
         activeIndex = active.coerceIn(0, (layers.size - 1).coerceAtLeast(0))
         paperColor = paper
         selection = null
+        inpaintMask = null
         clearHistory()
         version++
     }
