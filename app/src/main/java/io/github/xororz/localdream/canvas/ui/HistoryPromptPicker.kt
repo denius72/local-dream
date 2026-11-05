@@ -35,7 +35,7 @@ import io.github.xororz.localdream.data.HistoryManager
 
 /**
  * Lets the user pick an image from the Local Dream history (all models, newest
- * first) and take its prompt and parameters. Reads the history database, so it
+ * first) and take its prompt and negative prompt. Reads the history database, so it
  * also works for images saved before PNGs carried prompt metadata.
  */
 @Composable

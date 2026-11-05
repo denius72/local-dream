@@ -3313,14 +3313,9 @@ fun ModelRunScreen(
                     scheduler = p.scheduler
                     saveAllFields()
                 },
-                applyA1111 = { p ->
-                    promptField.replaceText(p.prompt)
-                    negativePromptField.replaceText(p.negativePrompt)
-                    p.steps?.let { steps = it.toFloat() }
-                    p.cfg?.let { cfg = it }
-                    p.seed?.let { seed = it.toString() }
-                    p.scheduler?.let { scheduler = it }
-                    p.denoiseStrength?.let { denoiseStrength = it }
+                applyPrompt = { prompt, negative ->
+                    promptField.replaceText(prompt)
+                    negativePromptField.replaceText(negative)
                     saveAllFields()
                 },
                 promptEditor = {

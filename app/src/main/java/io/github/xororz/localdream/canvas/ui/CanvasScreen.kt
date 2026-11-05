@@ -89,7 +89,6 @@ import io.github.xororz.localdream.canvas.Selection
 import io.github.xororz.localdream.canvas.SelectionMode
 import io.github.xororz.localdream.utils.A1111Params
 import io.github.xororz.localdream.utils.PngMetadata
-import io.github.xororz.localdream.utils.toA1111
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -114,7 +113,8 @@ class CanvasHost(
     val resetAi: () -> Unit,
     val currentParams: () -> CanvasGenParams,
     val applyParams: (CanvasGenParams) -> Unit,
-    val applyA1111: (A1111Params) -> Unit,
+    /** Loads only the prompt and negative prompt; the other settings stay. */
+    val applyPrompt: (prompt: String, negativePrompt: String) -> Unit,
     val promptEditor: @Composable () -> Unit,
     val openAdvanced: () -> Unit,
     /** img2img / inpaint strength, 0..1; read in composition. */
@@ -301,8 +301,8 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
             if (parsed == null) {
                 toast("This image has no saved prompt")
             } else {
-                host.applyA1111(parsed)
-                toast("Prompt and parameters loaded")
+                host.applyPrompt(parsed.prompt, parsed.negativePrompt)
+                toast("Prompt loaded")
             }
         }
     }
@@ -705,8 +705,8 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
         HistoryPromptPicker(
             onPick = { item ->
                 showHistoryPicker = false
-                host.applyA1111(item.params.toA1111(item.modelId, item.mode))
-                toast("Prompt and parameters loaded")
+                host.applyPrompt(item.params.prompt, item.params.negativePrompt)
+                toast("Prompt loaded")
             },
             onDismiss = { showHistoryPicker = false },
         )
