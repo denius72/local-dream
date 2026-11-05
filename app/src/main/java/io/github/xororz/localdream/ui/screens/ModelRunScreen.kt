@@ -3941,11 +3941,15 @@ fun ModelRunScreen(
                     contentDescription = "Save to gallery",
                     onClick = {
                         val bitmapToSave = historyBitmap
+                        val itemToSave = selectedHistoryItem
                         if (bitmapToSave != null) {
                             scope.launch {
                                 saveImage(
                                     context = context,
                                     bitmap = bitmapToSave,
+                                    parameters = itemToSave?.let {
+                                        it.params.toA1111(model?.name ?: it.modelId, it.mode).format()
+                                    },
                                     onSuccess = {
                                         Toast.makeText(
                                             context,

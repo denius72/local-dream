@@ -88,6 +88,7 @@ import io.github.xororz.localdream.canvas.Selection
 import io.github.xororz.localdream.canvas.SelectionMode
 import io.github.xororz.localdream.utils.A1111Params
 import io.github.xororz.localdream.utils.PngMetadata
+import io.github.xororz.localdream.utils.toA1111
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -167,6 +168,7 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
     var showSelectionMenu by remember { mutableStateOf(false) }
     var showProjectMenu by remember { mutableStateOf(false) }
     var showGenSettings by remember { mutableStateOf(false) }
+    var showHistoryPicker by remember { mutableStateOf(false) }
     var showOpen by remember { mutableStateOf(false) }
     var nameDialog by remember { mutableStateOf<String?>(null) } // "save" | "saveQuit"
     var confirmExit by remember { mutableStateOf(false) }
@@ -433,9 +435,9 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
         SelectionMenuDialog(editor, onAction = { action ->
             showSelectionMenu = false
             when (action) {
-                "all" -> doc.selection = Selection.all(doc.width, doc.height)
-                "none" -> doc.selection = null
-                "invert" -> doc.selection = Selection.invert(doc.selection, doc.width, doc.height)
+                "all" -> doc.changeSelection(Selection.all(doc.width, doc.height))
+                "none" -> doc.changeSelection(null)
+                "invert" -> doc.changeSelection(Selection.invert(doc.selection, doc.width, doc.height))
                 "to_mask" -> doc.selection?.let {
                     doc.inpaintMask = it
                     toast("Selection copied to the inpaint mask")
@@ -625,6 +627,9 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                         showGenSettings = false
                         host.openAdvanced()
                     }, modifier = Modifier.fillMaxWidth()) { Text("Steps, CFG, seed, sampler…") }
+                    OutlinedButton(onClick = { showHistoryPicker = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Load prompt from Local Dream history")
+                    }
                     OutlinedButton(onClick = { loadPromptLauncher.launch("image/png") }, modifier = Modifier.fillMaxWidth()) {
                         Text("Load prompt from a PNG image")
                     }
@@ -639,6 +644,17 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                 }
             },
             confirmButton = { TextButton(onClick = { showGenSettings = false }) { Text("OK") } },
+        )
+    }
+
+    if (showHistoryPicker) {
+        HistoryPromptPicker(
+            onPick = { item ->
+                showHistoryPicker = false
+                host.applyA1111(item.params.toA1111(item.modelId, item.mode))
+                toast("Prompt and parameters loaded")
+            },
+            onDismiss = { showHistoryPicker = false },
         )
     }
 
@@ -823,7 +839,7 @@ private fun OptionsBar(editor: CanvasEditorState, onOpenBrush: () -> Unit, onMes
                 }
                 Spacer(Modifier.weight(1f))
                 Chip("Deselect", selected = false) {
-                    doc.selection = null
+                    doc.changeSelection(null)
                     doc.redraw()
                 }
             }

@@ -7,7 +7,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -60,6 +59,8 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.xororz.localdream.canvas.CanvasDocument
@@ -103,6 +104,7 @@ fun ColorSidePanel(editor: CanvasEditorState, onColorClick: () -> Unit, onSizeCl
         modifier = modifier
             .width(72.dp)
             .fillMaxHeight()
+            .blockTouchesBehind()
             .background(PanelBg)
             .padding(horizontal = 6.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -182,16 +184,44 @@ private fun DragValue(text: String, onDrag: (Float) -> Unit, onClick: () -> Unit
         color = Color.White,
         fontSize = 15.sp,
         fontWeight = FontWeight.Medium,
+        textAlign = TextAlign.Center,
         modifier = Modifier
-            .padding(vertical = 6.dp)
+            .fillMaxWidth()
             .pointerInput(Unit) {
-                detectVerticalDragGestures { change, dy ->
+                // Distance-based, like MediBang: moving away from where the
+                // finger went down raises the value in any direction, moving
+                // back toward it lowers it. onDrag takes a dy-style delta
+                // (negative = increase).
+                var origin = Offset.Zero
+                var lastDist = 0f
+                detectDragGestures(
+                    onDragStart = { p ->
+                        origin = p
+                        lastDist = 0f
+                    },
+                ) { change, _ ->
                     change.consume()
-                    drag(dy)
+                    val dist = (change.position - origin).getDistance()
+                    drag(-(dist - lastDist))
+                    lastDist = dist
                 }
             }
-            .pointerInput(Unit) { detectTapGestures { click() } },
+            .pointerInput(Unit) { detectTapGestures { click() } }
+            .padding(vertical = 10.dp),
     )
+}
+
+/**
+ * Makes the whole area a touch target that swallows every pointer event the
+ * children leave unconsumed, so touches on gaps and padding never fall through
+ * to the canvas behind the panel.
+ */
+internal fun Modifier.blockTouchesBehind(): Modifier = pointerInput(Unit) {
+    awaitPointerEventScope {
+        while (true) {
+            awaitPointerEvent(PointerEventPass.Main).changes.forEach { it.consume() }
+        }
+    }
 }
 
 /** Vertical gradient bar with a draggable marker; position 0 = bottom, 1 = top. */
@@ -238,6 +268,7 @@ fun LayersPanel(
         modifier = modifier
             .width(236.dp)
             .fillMaxHeight()
+            .blockTouchesBehind()
             .background(BarBgDark.copy(alpha = 0.97f)),
     ) {
         Row(

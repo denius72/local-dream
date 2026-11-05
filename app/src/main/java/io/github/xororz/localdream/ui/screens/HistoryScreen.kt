@@ -52,6 +52,7 @@ import io.github.xororz.localdream.ui.components.ShareParamsFlow
 import io.github.xororz.localdream.ui.components.ZoomableImageOverlay
 import io.github.xororz.localdream.utils.saveImage
 import io.github.xororz.localdream.utils.saveImageFromFile
+import io.github.xororz.localdream.utils.toA1111
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -255,6 +256,7 @@ fun HistoryScreen(navController: NavController) {
                                 saveImage(
                                     context = context,
                                     bitmap = bitmapToSave,
+                                    parameters = item.params.toA1111(item.modelId, item.mode).format(),
                                     onSuccess = {
                                         Toast.makeText(
                                             context,

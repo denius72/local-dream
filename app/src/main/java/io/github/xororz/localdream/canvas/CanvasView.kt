@@ -308,7 +308,7 @@ private abstract class ToolAction {
                     val d = editor.screenToDoc(p)
                     val src = layer?.bitmap ?: return@TapAction
                     val sel = Selection.magicWand(src, d.x.toInt(), d.y.toInt(), editor.wandTolerance)
-                    doc.selection = Selection.combine(doc.selection, sel, editor.selectionMode)
+                    doc.changeSelection(Selection.combine(doc.selection, sel, editor.selectionMode))
                     doc.redraw()
                 }
 
@@ -450,10 +450,10 @@ private class RectSelectAction(private val editor: CanvasEditorState, down: Poin
         val doc = editor.doc
         editor.selectionDraft = null
         if (abs(a.x - b.x) < 2f || abs(a.y - b.y) < 2f) {
-            if (editor.selectionMode == SelectionMode.REPLACE) doc.selection = null
+            if (editor.selectionMode == SelectionMode.REPLACE) doc.changeSelection(null)
         } else {
             val sel = Selection.fromPath(rectPath(), doc.width, doc.height)
-            doc.selection = Selection.combine(doc.selection, sel, editor.selectionMode)
+            doc.changeSelection(Selection.combine(doc.selection, sel, editor.selectionMode))
         }
         doc.redraw()
     }
@@ -491,11 +491,11 @@ private class LassoAction(private val editor: CanvasEditorState, down: PointerIn
         val doc = editor.doc
         editor.selectionDraft = null
         if (count < 4) {
-            if (editor.selectionMode == SelectionMode.REPLACE) doc.selection = null
+            if (editor.selectionMode == SelectionMode.REPLACE) doc.changeSelection(null)
         } else {
             path.close()
             val sel = Selection.fromPath(path, doc.width, doc.height)
-            doc.selection = Selection.combine(doc.selection, sel, editor.selectionMode)
+            doc.changeSelection(Selection.combine(doc.selection, sel, editor.selectionMode))
         }
         doc.redraw()
     }

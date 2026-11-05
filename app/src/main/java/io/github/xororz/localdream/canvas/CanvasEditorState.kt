@@ -204,7 +204,7 @@ class CanvasEditorState(context: Context, val doc: CanvasDocument) {
         val bmp = doc.newBitmap()
         Canvas(bmp).drawBitmap(clip.bitmap, clip.left.toFloat(), clip.top.toFloat(), null)
         doc.addLayer("Pasted", bmp) ?: return PasteResult.NO_ROOM
-        doc.selection = null
+        doc.changeSelectionWithLastOp(null)
         selectTool(CanvasTool.MOVE)
         return PasteResult.OK
     }
@@ -237,7 +237,7 @@ class CanvasEditorState(context: Context, val doc: CanvasDocument) {
         val moved = !t.matrix.isIdentity
         if (moved) {
             doc.recordPixels(t.layer, Rect(0, 0, doc.width, doc.height), t.before)
-            t.selectionBefore?.let { doc.selection = it.transformed(t.matrix) }
+            t.selectionBefore?.let { doc.changeSelectionWithLastOp(it.transformed(t.matrix)) }
         } else {
             doc.redraw()
         }

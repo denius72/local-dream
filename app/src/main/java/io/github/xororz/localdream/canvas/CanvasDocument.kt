@@ -35,6 +35,17 @@ class CanvasLayer(
 sealed class UndoOp {
     abstract val bytes: Long
 
+    /** Selection before/after this op, when the op also changed the selection. */
+    var selectionChange: Pair<Selection?, Selection?>? = null
+
+    /** A selection-only change (select, add, subtract, invert, deselect). */
+    class SelectionOnly : UndoOp() {
+        // The masks are ALPHA_8 bitmaps the size of the document.
+        override val bytes: Long get() = 64 + (selectionChange?.let { (a, b) ->
+            (a?.mask?.byteCount ?: 0).toLong() + (b?.mask?.byteCount ?: 0)
+        } ?: 0L)
+    }
+
     class Pixels(val layer: CanvasLayer, val rect: Rect, var before: Bitmap, var after: Bitmap? = null) : UndoOp() {
         override val bytes: Long get() = rect.width().toLong() * rect.height() * 4 * 2
     }
@@ -309,6 +320,33 @@ class CanvasDocument(val width: Int, val height: Int) {
         return Color.rgb((r * 255).toInt(), (g * 255).toInt(), (b * 255).toInt())
     }
 
+    // ----- Selection --------------------------------------------------------
+
+    /** Sets the selection as an undoable step. */
+    fun changeSelection(new: Selection?) {
+        val old = selection
+        if (old === new) return
+        selection = new
+        pushUndo(UndoOp.SelectionOnly().apply { selectionChange = old to new })
+        touch()
+    }
+
+    /**
+     * Sets the selection as part of the op just recorded (e.g. a move that
+     * carries its selection along), so one undo reverts both.
+     */
+    fun changeSelectionWithLastOp(new: Selection?) {
+        val old = selection
+        if (old === new) return
+        selection = new
+        val last = undoStack.lastOrNull()
+        if (last == null) {
+            pushUndo(UndoOp.SelectionOnly().apply { selectionChange = old to new })
+        } else {
+            last.selectionChange = (last.selectionChange?.first ?: old) to new
+        }
+    }
+
     // ----- Undo -------------------------------------------------------------
 
     private fun pushUndo(op: UndoOp) {
@@ -350,7 +388,10 @@ class CanvasDocument(val width: Int, val height: Int) {
                 op.swapped.forEach { (layer, pair) -> layer.bitmap = pair.first }
                 restoreVisibility(op, undo = true)
             }
+
+            is UndoOp.SelectionOnly -> Unit
         }
+        op.selectionChange?.let { selection = it.first }
         redoStack.addLast(op)
         refreshUndoFlags()
         touch()
@@ -371,7 +412,10 @@ class CanvasDocument(val width: Int, val height: Int) {
                 op.swapped.forEach { (layer, pair) -> layer.bitmap = pair.second }
                 restoreVisibility(op, undo = false)
             }
+
+            is UndoOp.SelectionOnly -> Unit
         }
+        op.selectionChange?.let { selection = it.second }
         undoStack.addLast(op)
         refreshUndoFlags()
         touch()
