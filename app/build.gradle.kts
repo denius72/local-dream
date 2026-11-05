@@ -39,7 +39,7 @@ android {
         // in-app update check compares it with the number in the APK name.
         val upstreamVersionCode = 74
         val upstreamVersionName = "3.0.0-alpha.7"
-        val canvasRelease = 12
+        val canvasRelease = 13
         versionCode = upstreamVersionCode * 100 + canvasRelease
         versionName = "$upstreamVersionName-canvas.$canvasRelease"
 
