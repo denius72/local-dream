@@ -12,9 +12,10 @@
 </div>
 
 This is an unofficial fork of [xororz/local-dream](https://github.com/xororz/local-dream).
-Everything else is the same app: same models, same backend, same settings. The
-only goal of this fork is a better canvas for drawing and painting together with
-the AI.
+The generation engine and the models are the upstream ones; the canvas, for
+drawing and painting together with the AI, is the reason to use this fork. A few
+smaller extras are listed further down. Don't care about the canvas? The fork
+works as a regular Local Dream too: skip the canvas and enjoy the extras.
 
 Upstream Local Dream only lets you scribble on top of an image you picked for
 img2img. Here the canvas is a full drawing screen, with its tools laid out like
@@ -29,13 +30,23 @@ MediBang Paint.
 - Layers: add, duplicate, merge down, reorder, hide, opacity, rename, import an
   image as a layer.
 - Brushes: pen, airbrush, eraser, blur and smudge, with adjustable size,
-  opacity, hardness, spacing and strength. Bucket fill and eyedropper.
+  opacity, hardness, spacing and strength. Press the size or opacity value next
+  to the color panel and drag up or down to change it. Bucket fill.
+- Eyedropper: picks a color and goes back to the tool you were using. Holding a
+  finger or the pen still on a drawing tool also picks a color, and a magnifier
+  with a crosshair shows the exact pixel above your finger (both can be turned
+  off in Settings).
 - S Pen: pressure (size and/or opacity), the eraser end erases, hover shows the
   brush outline, adjustable stabilizer. Optional "only the pen draws" mode.
 - Inpaint mask brush: paint (or erase) the area the AI should redraw, shown in red.
 - Selections: rectangle, lasso and magic wand (new / add / subtract), with cut,
   copy, paste as a layer, clear, and move/scale/rotate.
-- Gestures: pinch to zoom and pan, two-finger tap undoes, three-finger tap redoes.
+- Gestures: pinch to zoom and pan, twist two fingers to rotate the canvas (snaps
+  to quarter turns; Fit resets it), two-finger tap undoes, three-finger tap redoes.
+- Projects (`.ldcanvas`: layers plus prompt and settings) are saved separately
+  from the generation history: Save, Save as, Save and quit, Open.
+- Export to the gallery, optionally keeping transparency (no paper color behind
+  the layers).
 
 **The magic button**
 - The blue button in the bottom bar generates from your drawing:
@@ -51,25 +62,31 @@ MediBang Paint.
   layer or flattened, your choice), ✗ throws it away. The prompt and settings
   stay, so you can keep drawing on top and run it again.
 - The gear button holds the prompt, negative prompt, denoise strength and batch
-  count, plus the usual steps / CFG / seed / sampler.
+  count, plus the usual steps / CFG / seed / sampler. It can also load a prompt
+  from the Local Dream history or from a PNG, which helps when you switch models.
 
-**Also**
-- Saved PNGs carry the prompt in the A1111 `parameters` format, readable by
-  Civitai, ComfyUI and most viewers (on by default; turn off in Settings for
-  plain images like upstream). The canvas can load a prompt back from a PNG,
-  which helps when you switch models.
-- Fix: images finished while the app is minimized or the screen is locked are
-  saved (upstream drops them). Leave a batch running in your pocket
-  (careful, your phone may get very hot, unless you wanted a pocket heater).
-- Canvas projects (`.ldcanvas`: layers plus prompt and settings) are saved
-  separately from the generation history: Save, Save as, Save and quit, Open.
-- Backup & Restore also carries canvas projects and canvas settings. Turn on
+## Differences from vanilla Local Dream (besides the canvas)
+
+Small extras in the app underneath, same engine and models as upstream:
+
+- **Prompt in saved PNGs**, in the A1111 `parameters` format (Civitai, ComfyUI
+  and most viewers read it). On by default; turn it off for plain images.
+- **Background saving fix**: images that finish while the app is minimized or
+  the screen is locked are saved (upstream drops them). Careful with batches in
+  your pocket: the phone can get very hot, unless you wanted a pocket heater.
+- **Backup & Restore carries more**: also canvas projects and settings. Turn on
   "Compatible with original Local Dream" to export the history only, in the
   upstream format.
-- Installs next to the original app (package `io.github.denius.localdreamcanvas`).
-  The local backend port is a setting (default 8081, like upstream): if the
-  original Local Dream is running too, set **Settings → Local backend port** to
+- **Installs next to the original app** (package `io.github.denius.localdreamcanvas`).
+  The local backend port is a setting (default 8081, like upstream); if the
+  original app is running too, set **Settings → Local backend port** to
   something else, e.g. 8091.
+- **Portuguese, Spanish and Russian** translations for the whole app (on top of
+  upstream's Japanese, Korean and Chinese).
+- A **Local Dream Canvas Options** section at the top of Settings, holding the
+  options this fork adds.
+- A **Check for updates of this fork** button (Settings → Local Dream Canvas
+  Options) that opens the latest release page on GitHub.
 - No NSFW filter build: only the `basic` flavor exists.
 
 ## Install
