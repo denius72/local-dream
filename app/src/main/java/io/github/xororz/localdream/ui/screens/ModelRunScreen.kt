@@ -2130,7 +2130,7 @@ fun ModelRunScreen(
                                     ),
                                 ) {
                                     Text(
-                                        "Canvas",
+                                        stringResource(R.string.canvas_open_button),
                                         style = MaterialTheme.typography.bodyMedium,
                                         modifier = Modifier.padding(end = 4.dp),
                                     )
@@ -2214,7 +2214,7 @@ fun ModelRunScreen(
                                     ),
                                 ) {
                                     Text(
-                                        stringResource(R.string.advanced_settings),
+                                        stringResource(R.string.canvas_advanced_short),
                                         style = MaterialTheme.typography.bodyMedium,
                                         modifier = Modifier.padding(end = 4.dp),
                                     )

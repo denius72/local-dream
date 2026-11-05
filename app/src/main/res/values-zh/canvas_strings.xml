@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fork strings; everything else here falls back to English. -->
+<resources>
+    <string name="canvas_advanced_short">高级</string>
+</resources>

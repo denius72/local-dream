@@ -21,6 +21,11 @@
     <string name="canvas_port_label">Porta</string>
     <string name="canvas_port_set">Porta do backend alterada para %1$d</string>
 
+    <!-- Prompt page (upstream screen): Canvas button and the short label of the
+         Advanced button, which no longer fits next to Canvas and img2img. -->
+    <string name="canvas_open_button">Canvas</string>
+    <string name="canvas_advanced_short">Avanç.</string>
+
     <!-- Tools -->
     <string name="canvas_tool_pen">Caneta</string>
     <string name="canvas_tool_airbrush">Aerógrafo</string>
