@@ -69,7 +69,7 @@ MediBang Paint.
 
 ## Install
 
-Grab the APK from the [Releases](https://github.com/denius72/local-dream/releases) page. Requirements are the same as upstream Local Dream
+Grab the APK from the [Releases](https://github.com/denius72/local-dream-canvas/releases) page. Requirements are the same as upstream Local Dream
 (see below). If you already use Local Dream with models in `Download/LocalDream`,
 set **Model storage → Downloads** in this app and grant "All files access"; it
 will use the same models without downloading them again.
