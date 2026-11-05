@@ -27,6 +27,33 @@ class Selection(val mask: Bitmap, val bounds: Rect, val outline: Path?) {
         alphaCache = it
     }
 
+    /**
+     * Keeps only the selected pixels of [target], whose top-left corner sits at
+     * ([left], [top]) in document coordinates; the rest becomes transparent.
+     * Done on the pixels: drawing an ALPHA_8 mask with DST_IN does not work,
+     * Skia treats it as coverage and leaves the unselected area untouched.
+     */
+    fun keepInside(target: Bitmap, left: Int = 0, top: Int = 0) {
+        val tw = target.width
+        val th = target.height
+        val a = alpha()
+        val mw = mask.width
+        val px = IntArray(tw * th)
+        target.getPixels(px, 0, tw, 0, 0, tw, th)
+        for (y in 0 until th) {
+            val my = y + top
+            for (x in 0 until tw) {
+                val i = y * tw + x
+                val mx = x + left
+                val m = if (my in 0 until mask.height && mx in 0 until mw) a[my * mw + mx].toInt() and 0xFF else 0
+                if (m == 255) continue
+                val c = px[i]
+                px[i] = if (m == 0) 0 else ((((c ushr 24) * m + 127) / 255) shl 24) or (c and 0xFFFFFF)
+            }
+        }
+        target.setPixels(px, 0, tw, 0, 0, tw, th)
+    }
+
     /** Overlay for the unselected area (inverse mask). */
     val outsideOverlay: Bitmap by lazy {
         val out = Bitmap.createBitmap(mask.width, mask.height, Bitmap.Config.ALPHA_8)

@@ -187,14 +187,7 @@ class CanvasEditorState(context: Context, val doc: CanvasDocument) {
         val sel = doc.selection
         val r = sel?.bounds ?: Rect(0, 0, doc.width, doc.height)
         val out = Bitmap.createBitmap(layer.bitmap, r.left, r.top, r.width(), r.height()).copy(Bitmap.Config.ARGB_8888, true)
-        if (sel != null) {
-            Canvas(out).drawBitmap(
-                sel.mask,
-                -r.left.toFloat(),
-                -r.top.toFloat(),
-                Paint().apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN) },
-            )
-        }
+        sel?.keepInside(out, r.left, r.top)
         clipboard = CanvasClipboard(out, r.left, r.top)
         return true
     }
@@ -228,7 +221,7 @@ class CanvasEditorState(context: Context, val doc: CanvasDocument) {
         val fc = Canvas(floating)
         fc.drawBitmap(layer.bitmap, 0f, 0f, null)
         if (sel != null) {
-            fc.drawBitmap(sel.mask, 0f, 0f, Paint().apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN) })
+            sel.keepInside(floating)
             Canvas(layer.bitmap).drawBitmap(sel.mask, 0f, 0f, Paint().apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT) })
         } else {
             layer.bitmap.eraseColor(android.graphics.Color.TRANSPARENT)
