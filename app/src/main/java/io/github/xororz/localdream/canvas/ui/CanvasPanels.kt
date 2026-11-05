@@ -50,6 +50,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -135,8 +137,12 @@ fun ColorSidePanel(editor: CanvasEditorState, onColorClick: () -> Unit, onSizeCl
         }
         Spacer(Modifier.height(8.dp))
         val brush = editor.current
+        // Centre of the brush preview dot, in root coordinates: both drags
+        // measure from it.
+        var dotCenter by remember { mutableStateOf(Offset.Zero) }
         DragValue(
             text = "${brush.size.roundToInt()} px",
+            center = { dotCenter },
             onDrag = { dy ->
                 val t = editor.tool.takeIf { it.isBrush } ?: io.github.xororz.localdream.canvas.CanvasTool.PEN
                 val cur = editor.settingsFor(t)
@@ -145,7 +151,14 @@ fun ColorSidePanel(editor: CanvasEditorState, onColorClick: () -> Unit, onSizeCl
             },
             onClick = onSizeClick,
         )
-        Box(Modifier.size(28.dp), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier
+                .size(28.dp)
+                .onGloballyPositioned { c ->
+                    dotCenter = c.positionInRoot() + Offset(c.size.width / 2f, c.size.height / 2f)
+                },
+            contentAlignment = Alignment.Center,
+        ) {
             val d = (brush.size / 4f).coerceIn(2f, 26f)
             Box(
                 Modifier
@@ -156,6 +169,7 @@ fun ColorSidePanel(editor: CanvasEditorState, onColorClick: () -> Unit, onSizeCl
         }
         DragValue(
             text = "${(brush.opacity * 100).roundToInt()} %",
+            center = { dotCenter },
             onDrag = { dy ->
                 val t = editor.tool.takeIf { it.isBrush } ?: io.github.xororz.localdream.canvas.CanvasTool.PEN
                 val cur = editor.settingsFor(t)
@@ -176,9 +190,11 @@ fun ColorSidePanel(editor: CanvasEditorState, onColorClick: () -> Unit, onSizeCl
 }
 
 @Composable
-private fun DragValue(text: String, onDrag: (Float) -> Unit, onClick: () -> Unit) {
+private fun DragValue(text: String, center: () -> Offset, onDrag: (Float) -> Unit, onClick: () -> Unit) {
     val drag by rememberUpdatedState(onDrag)
     val click by rememberUpdatedState(onClick)
+    val centerRoot by rememberUpdatedState(center)
+    var myPos by remember { mutableStateOf(Offset.Zero) }
     Text(
         text,
         color = Color.White,
@@ -187,10 +203,11 @@ private fun DragValue(text: String, onDrag: (Float) -> Unit, onClick: () -> Unit
         textAlign = TextAlign.Center,
         modifier = Modifier
             .fillMaxWidth()
+            .onGloballyPositioned { myPos = it.positionInRoot() }
             .pointerInput(Unit) {
-                // Like MediBang: moving away from the centre of this control
-                // raises the value in any direction, moving toward it lowers
-                // it, and going past the centre keeps lowering it. While the
+                // Like MediBang: moving away from the centre of the brush
+                // preview dot raises the value in any direction, moving toward
+                // it lowers it, and going past the centre keeps lowering it. While the
                 // finger is on the outward side the axis follows it (pure
                 // distance); past the centre the axis stays put, so the
                 // projection turns negative instead of growing again.
@@ -200,7 +217,7 @@ private fun DragValue(text: String, onDrag: (Float) -> Unit, onClick: () -> Unit
                 var lastS = 0f
                 detectDragGestures(
                     onDragStart = { p ->
-                        origin = Offset(size.width / 2f, size.height / 2f)
+                        origin = centerRoot() - myPos
                         val v0 = p - origin
                         val l0 = v0.getDistance()
                         axis = if (l0 > 0f) v0 / l0 else Offset.Zero
