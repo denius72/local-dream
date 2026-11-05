@@ -212,15 +212,15 @@ private fun DragValue(text: String, onDrag: (Float) -> Unit, onClick: () -> Unit
 }
 
 /**
- * Makes the whole area a touch target that swallows every pointer event the
- * children leave unconsumed, so touches on gaps and padding never fall through
- * to the canvas behind the panel.
+ * Makes the whole area a touch target, so touches on gaps and padding never
+ * fall through to the canvas behind the panel: a hit sibling on top keeps the
+ * ones below from receiving the gesture. It only listens and never consumes,
+ * since tap and drag detectors in the children cancel themselves when they see
+ * their events consumed by someone else.
  */
 internal fun Modifier.blockTouchesBehind(): Modifier = pointerInput(Unit) {
     awaitPointerEventScope {
-        while (true) {
-            awaitPointerEvent(PointerEventPass.Main).changes.forEach { it.consume() }
-        }
+        while (true) awaitPointerEvent(PointerEventPass.Final)
     }
 }
 
