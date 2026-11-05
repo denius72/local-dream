@@ -1,5 +1,8 @@
 package io.github.xororz.localdream.canvas.ui
 
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import io.github.xororz.localdream.R
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -254,6 +257,9 @@ fun LayersPanel(
     onImportImage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val limitMsg = stringResource(R.string.canvas_layer_limit, doc.maxLayers)
+    val noBelowMsg = stringResource(R.string.canvas_no_layer_below)
+    val oneLayerMsg = stringResource(R.string.canvas_one_layer_required)
     Column(
         modifier = modifier
             .width(236.dp)
@@ -267,28 +273,28 @@ fun LayersPanel(
                 .horizontalScroll(rememberScrollState())
                 .padding(4.dp),
         ) {
-            PanelIcon(Icons.Default.Add, "New layer") {
-                if (doc.addLayer() == null) onMessage("Layer limit (${doc.maxLayers}) reached")
+            PanelIcon(Icons.Default.Add, stringResource(R.string.canvas_new_layer)) {
+                if (doc.addLayer() == null) onMessage(limitMsg)
             }
-            PanelIcon(Icons.Default.AddPhotoAlternate, "Import image as layer") {
-                if (doc.canAddLayer()) onImportImage() else onMessage("Layer limit (${doc.maxLayers}) reached")
+            PanelIcon(Icons.Default.AddPhotoAlternate, stringResource(R.string.canvas_import_layer)) {
+                if (doc.canAddLayer()) onImportImage() else onMessage(limitMsg)
             }
-            PanelIcon(Icons.Default.ControlPointDuplicate, "Duplicate") {
-                if (!doc.duplicateActive()) onMessage("Layer limit (${doc.maxLayers}) reached")
+            PanelIcon(Icons.Default.ControlPointDuplicate, stringResource(R.string.canvas_duplicate)) {
+                if (!doc.duplicateActive()) onMessage(limitMsg)
             }
-            PanelIcon(Icons.Default.CallMerge, "Merge down") {
-                if (!doc.mergeDown()) onMessage("No layer below")
+            PanelIcon(Icons.Default.CallMerge, stringResource(R.string.canvas_merge_down)) {
+                if (!doc.mergeDown()) onMessage(noBelowMsg)
             }
-            PanelIcon(Icons.Default.ArrowUpward, "Move up") { doc.moveActive(1) }
-            PanelIcon(Icons.Default.ArrowDownward, "Move down") { doc.moveActive(-1) }
-            PanelIcon(Icons.Default.LayersClear, "Clear") { doc.clearActive() }
-            PanelIcon(Icons.Default.Delete, "Delete") {
-                if (!doc.deleteActive()) onMessage("At least one layer is required")
+            PanelIcon(Icons.Default.ArrowUpward, stringResource(R.string.canvas_move_up)) { doc.moveActive(1) }
+            PanelIcon(Icons.Default.ArrowDownward, stringResource(R.string.canvas_move_down)) { doc.moveActive(-1) }
+            PanelIcon(Icons.Default.LayersClear, stringResource(R.string.canvas_clear)) { doc.clearActive() }
+            PanelIcon(Icons.Default.Delete, stringResource(R.string.canvas_delete)) {
+                if (!doc.deleteActive()) onMessage(oneLayerMsg)
             }
         }
         doc.activeLayer?.let { layer ->
             Row(Modifier.padding(horizontal = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Opacity ${(layer.opacity * 100).roundToInt()}%", color = BarIcon, fontSize = 12.sp, modifier = Modifier.width(96.dp))
+                Text(stringResource(R.string.canvas_layer_opacity, (layer.opacity * 100).roundToInt()), color = BarIcon, fontSize = 12.sp, modifier = Modifier.width(96.dp))
                 Slider(
                     value = layer.opacity,
                     onValueChange = {
@@ -300,7 +306,7 @@ fun LayersPanel(
             }
         }
         Text(
-            "${doc.layers.size}/${doc.maxLayers} layers",
+            pluralStringResource(R.plurals.canvas_layer_count, doc.maxLayers, doc.layers.size, doc.maxLayers),
             color = BarIcon.copy(alpha = 0.6f),
             fontSize = 11.sp,
             modifier = Modifier.padding(horizontal = 10.dp),
@@ -350,7 +356,7 @@ private fun LayerRow(doc: CanvasDocument, layer: CanvasLayer, selected: Boolean,
         ) {
             Icon(
                 if (layer.visible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                contentDescription = "Visibility",
+                contentDescription = stringResource(R.string.canvas_visibility),
                 tint = BarIcon,
                 modifier = Modifier.size(20.dp),
             )

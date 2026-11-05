@@ -1248,6 +1248,8 @@ fun ModelListScreen(navController: NavController, modifier: Modifier = Modifier)
                     verticalArrangement = Arrangement.spacedBy(24.dp),
                     contentPadding = PaddingValues(vertical = 16.dp),
                 ) {
+                    // Options added by the Local Dream Canvas fork
+                    item { io.github.xororz.localdream.canvas.ui.LocalDreamCanvasOptionsSection() }
                     // Download source settings section
                     item {
                         Column {
@@ -1387,7 +1389,6 @@ fun ModelListScreen(navController: NavController, modifier: Modifier = Modifier)
                     if (ModelStorage.isChoiceShown(context)) {
                         item { ModelStorageSection() }
                     }
-                    item { BackendPortSection() }
                     // Appearance (theme) section
                     item { AppearanceSection() }
                     // Feature settings section
@@ -1547,22 +1548,6 @@ fun ModelListScreen(navController: NavController, modifier: Modifier = Modifier)
                                     onCheckedChange = {
                                         useImg2img = it
                                         preferences.edit { putBoolean("use_img2img", it) }
-                                    },
-                                )
-                                HorizontalDivider(
-                                    modifier = Modifier.padding(horizontal = 16.dp),
-                                )
-                                var savePromptMetadata by remember {
-                                    mutableStateOf(io.github.xororz.localdream.utils.PromptMetadataSetting.enabled)
-                                }
-                                SwitchSettingRow(
-                                    title = "Save prompt in image metadata",
-                                    description = "Saved PNGs include the prompt and settings (A1111 format), " +
-                                        "so they can be loaded back later. Turn off for plain images like upstream Local Dream.",
-                                    checked = savePromptMetadata,
-                                    onCheckedChange = {
-                                        savePromptMetadata = it
-                                        io.github.xororz.localdream.utils.PromptMetadataSetting.set(context, it)
                                     },
                                 )
                                 HorizontalDivider(

@@ -1,5 +1,8 @@
 package io.github.xororz.localdream.canvas.ui
 
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import io.github.xororz.localdream.R
 import android.graphics.Bitmap
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -113,53 +116,53 @@ fun BrushSettingsDialog(editor: CanvasEditorState, onDismiss: () -> Unit) {
             editor.savePrefs()
             onDismiss()
         },
-        title = { Text("${CanvasIcons.label(tool)} settings") },
+        title = { Text(stringResource(R.string.canvas_tool_settings, CanvasIcons.label(tool))) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                LabeledSlider("Size", "${s.size.roundToInt()} px", s.size, 1f..500f) { upd(s.copy(size = it)) }
+                LabeledSlider(stringResource(R.string.canvas_size), "${s.size.roundToInt()} px", s.size, 1f..500f) { upd(s.copy(size = it)) }
                 if (tool == CanvasTool.INPAINT) {
                     Text(
-                        "Paint the area the AI should redraw (shown in red). The magic button then runs inpaint on it.",
+                        stringResource(R.string.canvas_inpaint_hint),
                         style = MaterialTheme.typography.bodySmall,
                     )
-                    LabeledSlider("Mask edge feather", "${editor.maskFeather.roundToInt()} px", editor.maskFeather, 0f..48f) {
+                    LabeledSlider(stringResource(R.string.canvas_mask_feather), "${editor.maskFeather.roundToInt()} px", editor.maskFeather, 0f..48f) {
                         editor.maskFeather = it
                     }
                     return@Column
                 }
-                LabeledSlider("Opacity", "${(s.opacity * 100).roundToInt()}%", s.opacity, 0.01f..1f) { upd(s.copy(opacity = it)) }
-                LabeledSlider("Hardness", "${(s.hardness * 100).roundToInt()}%", s.hardness, 0f..1f) { upd(s.copy(hardness = it)) }
+                LabeledSlider(stringResource(R.string.canvas_opacity), "${(s.opacity * 100).roundToInt()}%", s.opacity, 0.01f..1f) { upd(s.copy(opacity = it)) }
+                LabeledSlider(stringResource(R.string.canvas_hardness), "${(s.hardness * 100).roundToInt()}%", s.hardness, 0f..1f) { upd(s.copy(hardness = it)) }
                 if (tool == CanvasTool.BLUR || tool == CanvasTool.SMUDGE || tool == CanvasTool.AIRBRUSH) {
-                    val label = if (tool == CanvasTool.AIRBRUSH) "Flow" else "Strength"
+                    val label = if (tool == CanvasTool.AIRBRUSH) stringResource(R.string.canvas_flow) else stringResource(R.string.canvas_strength)
                     LabeledSlider(label, "${(s.strength * 100).roundToInt()}%", s.strength, 0.01f..1f) { upd(s.copy(strength = it)) }
                 }
-                LabeledSlider("Spacing", "${(s.spacing * 100).roundToInt()}%", s.spacing, 0.02f..1f) { upd(s.copy(spacing = it)) }
+                LabeledSlider(stringResource(R.string.canvas_spacing), "${(s.spacing * 100).roundToInt()}%", s.spacing, 0.02f..1f) { upd(s.copy(spacing = it)) }
                 if (tool != CanvasTool.BLUR && tool != CanvasTool.SMUDGE) {
-                    SwitchRow("Pressure → size", s.pressureSize) { upd(s.copy(pressureSize = it)) }
+                    SwitchRow(stringResource(R.string.canvas_pressure_size), s.pressureSize) { upd(s.copy(pressureSize = it)) }
                     if (s.pressureSize) {
-                        LabeledSlider("Minimum size", "${(s.minSizeRatio * 100).roundToInt()}%", s.minSizeRatio, 0f..1f) {
+                        LabeledSlider(stringResource(R.string.canvas_min_size), "${(s.minSizeRatio * 100).roundToInt()}%", s.minSizeRatio, 0f..1f) {
                             upd(s.copy(minSizeRatio = it))
                         }
                     }
-                    SwitchRow("Pressure → opacity", s.pressureOpacity) { upd(s.copy(pressureOpacity = it)) }
+                    SwitchRow(stringResource(R.string.canvas_pressure_opacity), s.pressureOpacity) { upd(s.copy(pressureOpacity = it)) }
                 }
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                Text("Canvas", style = MaterialTheme.typography.titleSmall)
-                LabeledSlider("Correction (stabilizer)", "${editor.correction}", editor.correction.toFloat(), 0f..20f) {
+                Text(stringResource(R.string.canvas_section_canvas), style = MaterialTheme.typography.titleSmall)
+                LabeledSlider(stringResource(R.string.canvas_correction), "${editor.correction}", editor.correction.toFloat(), 0f..20f) {
                     editor.correction = it.roundToInt()
                 }
-                SwitchRow("Use S Pen pressure", editor.pressureEnabled) { editor.pressureEnabled = it }
-                SwitchRow("Only the S Pen draws (fingers move the view)", editor.stylusOnly) { editor.stylusOnly = it }
+                SwitchRow(stringResource(R.string.canvas_use_pen_pressure), editor.pressureEnabled) { editor.pressureEnabled = it }
+                SwitchRow(stringResource(R.string.canvas_stylus_only), editor.stylusOnly) { editor.stylusOnly = it }
             }
         },
         confirmButton = {
             TextButton(onClick = {
                 editor.savePrefs()
                 onDismiss()
-            }) { Text("OK") }
+            }) { Text(stringResource(R.string.canvas_ok)) }
         },
         dismissButton = {
-            TextButton(onClick = { upd(BrushSettings.defaultFor(tool)) }) { Text("Default") }
+            TextButton(onClick = { upd(BrushSettings.defaultFor(tool)) }) { Text(stringResource(R.string.canvas_default)) }
         },
     )
 }
@@ -197,17 +200,16 @@ fun GenerateHintDialog(onCancel: () -> Unit, onGenerate: (dontShowAgain: Boolean
     AlertDialog(
         onDismissRequest = onCancel,
         icon = { Icon(Icons.Default.AutoFixHigh, contentDescription = null) },
-        title = { Text("Before you generate") },
+        title = { Text(stringResource(R.string.canvas_hint_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    "Don't forget to check your prompt and model settings first! " +
-                        "They live behind the gear, right next to the magic button.",
+                    stringResource(R.string.canvas_hint_text),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Image(
                     painter = androidx.compose.ui.res.painterResource(io.github.xororz.localdream.R.drawable.canvas_hint_gear),
-                    contentDescription = "The gear button next to the magic button",
+                    contentDescription = stringResource(R.string.canvas_hint_image_desc),
                     contentScale = ContentScale.FillWidth,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -221,7 +223,7 @@ fun GenerateHintDialog(onCancel: () -> Unit, onGenerate: (dontShowAgain: Boolean
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     androidx.compose.material3.Checkbox(checked = dontShowAgain, onCheckedChange = { dontShowAgain = it })
-                    Text("Don't show again", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.canvas_dont_show_again), style = MaterialTheme.typography.bodyMedium)
                 }
             }
         },
@@ -232,10 +234,10 @@ fun GenerateHintDialog(onCancel: () -> Unit, onGenerate: (dontShowAgain: Boolean
             ) {
                 Icon(Icons.Default.AutoFixHigh, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Generate")
+                Text(stringResource(R.string.canvas_generate))
             }
         },
-        dismissButton = { TextButton(onClick = onCancel) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onCancel) { Text(stringResource(R.string.canvas_cancel)) } },
     )
 }
 
@@ -252,7 +254,7 @@ fun ColorPickerDialog(editor: CanvasEditorState, onDismiss: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Color") },
+        title = { Text(stringResource(R.string.canvas_color)) },
         text = {
             Column {
                 Row(Modifier.fillMaxWidth().height(220.dp)) {
@@ -287,7 +289,7 @@ fun ColorPickerDialog(editor: CanvasEditorState, onDismiss: () -> Unit) {
                 }
                 if (editor.recentColors.isNotEmpty()) {
                     Spacer(Modifier.height(10.dp))
-                    Text("Recent", style = MaterialTheme.typography.labelMedium)
+                    Text(stringResource(R.string.canvas_recent), style = MaterialTheme.typography.labelMedium)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         editor.recentColors.forEach { c ->
                             Box(
@@ -312,9 +314,9 @@ fun ColorPickerDialog(editor: CanvasEditorState, onDismiss: () -> Unit) {
             TextButton(onClick = {
                 editor.pickColor(current)
                 onDismiss()
-            }) { Text("OK") }
+            }) { Text(stringResource(R.string.canvas_ok)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.canvas_cancel)) } },
     )
 }
 
@@ -355,10 +357,10 @@ fun SelectionMenuDialog(
     val hasSel = editor.doc.selection != null
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Selection") },
+        title = { Text(stringResource(R.string.canvas_selection)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                Text("Selection tool mode", style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(R.string.canvas_selection_mode), style = MaterialTheme.typography.labelMedium)
                 val modes = io.github.xororz.localdream.canvas.SelectionMode.entries
                 SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                     modes.forEachIndexed { i, m ->
@@ -369,34 +371,34 @@ fun SelectionMenuDialog(
                         ) {
                             Text(
                                 when (m) {
-                                    io.github.xororz.localdream.canvas.SelectionMode.REPLACE -> "New"
-                                    io.github.xororz.localdream.canvas.SelectionMode.ADD -> "Add"
-                                    io.github.xororz.localdream.canvas.SelectionMode.SUBTRACT -> "Subtract"
+                                    io.github.xororz.localdream.canvas.SelectionMode.REPLACE -> stringResource(R.string.canvas_sel_new)
+                                    io.github.xororz.localdream.canvas.SelectionMode.ADD -> stringResource(R.string.canvas_sel_add)
+                                    io.github.xororz.localdream.canvas.SelectionMode.SUBTRACT -> stringResource(R.string.canvas_sel_subtract)
                                 },
                             )
                         }
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                MenuRow("Select all") { onAction("all") }
-                MenuRow("Deselect", enabled = hasSel) { onAction("none") }
-                MenuRow("Invert selection") { onAction("invert") }
-                MenuRow("Use as inpaint mask", enabled = hasSel) { onAction("to_mask") }
+                MenuRow(stringResource(R.string.canvas_select_all)) { onAction("all") }
+                MenuRow(stringResource(R.string.canvas_deselect), enabled = hasSel) { onAction("none") }
+                MenuRow(stringResource(R.string.canvas_invert_selection)) { onAction("invert") }
+                MenuRow(stringResource(R.string.canvas_use_as_mask), enabled = hasSel) { onAction("to_mask") }
                 HorizontalDivider()
-                MenuRow("Cut") { onAction("cut") }
-                MenuRow("Copy") { onAction("copy") }
-                MenuRow("Paste (new layer)", enabled = editor.clipboard != null) { onAction("paste") }
-                MenuRow("Clear contents") { onAction("delete") }
-                MenuRow("Move / transform") { onAction("transform") }
+                MenuRow(stringResource(R.string.canvas_cut)) { onAction("cut") }
+                MenuRow(stringResource(R.string.canvas_copy)) { onAction("copy") }
+                MenuRow(stringResource(R.string.canvas_paste), enabled = editor.clipboard != null) { onAction("paste") }
+                MenuRow(stringResource(R.string.canvas_clear_contents)) { onAction("delete") }
+                MenuRow(stringResource(R.string.canvas_tool_move)) { onAction("transform") }
                 HorizontalDivider()
-                LabeledSlider("Magic wand tolerance", "${editor.wandTolerance}", editor.wandTolerance.toFloat(), 0f..128f) {
+                LabeledSlider(stringResource(R.string.canvas_wand_tolerance), "${editor.wandTolerance}", editor.wandTolerance.toFloat(), 0f..128f) {
                     editor.wandTolerance = it.roundToInt()
                 }
-                LabeledSlider("Fill tolerance", "${editor.fillTolerance}", editor.fillTolerance.toFloat(), 0f..128f) {
+                LabeledSlider(stringResource(R.string.canvas_fill_tolerance), "${editor.fillTolerance}", editor.fillTolerance.toFloat(), 0f..128f) {
                     editor.fillTolerance = it.roundToInt()
                 }
-                SwitchRow("Fill samples all layers", editor.fillSampleAll) { editor.fillSampleAll = it }
-                LabeledSlider("Mask edge feather (AI)", "${editor.maskFeather.roundToInt()} px", editor.maskFeather, 0f..48f) {
+                SwitchRow(stringResource(R.string.canvas_fill_sample_all), editor.fillSampleAll) { editor.fillSampleAll = it }
+                LabeledSlider(stringResource(R.string.canvas_mask_feather_ai), "${editor.maskFeather.roundToInt()} px", editor.maskFeather, 0f..48f) {
                     editor.maskFeather = it
                 }
             }
@@ -405,7 +407,7 @@ fun SelectionMenuDialog(
             TextButton(onClick = {
                 editor.savePrefs()
                 onDismiss()
-            }) { Text("Close") }
+            }) { Text(stringResource(R.string.canvas_close)) }
         },
     )
 }
@@ -432,10 +434,10 @@ fun ProjectNameDialog(title: String, initial: String, onConfirm: (String) -> Uni
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            OutlinedTextField(value = name, onValueChange = { name = it }, singleLine = true, label = { Text("Name") })
+            OutlinedTextField(value = name, onValueChange = { name = it }, singleLine = true, label = { Text(stringResource(R.string.canvas_name)) })
         },
-        confirmButton = { TextButton(onClick = { onConfirm(name) }, enabled = name.isNotBlank()) { Text("Save") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { TextButton(onClick = { onConfirm(name) }, enabled = name.isNotBlank()) { Text(stringResource(R.string.canvas_save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.canvas_cancel)) } },
     )
 }
 
@@ -449,13 +451,13 @@ fun OpenProjectDialog(onOpen: (ProjectInfo) -> Unit, onDismiss: () -> Unit) {
     var toDelete by remember { mutableStateOf<ProjectInfo?>(null) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Open project") },
+        title = { Text(stringResource(R.string.canvas_open_project)) },
         text = {
             val list = projects
             when {
                 list == null -> LinearProgressIndicator(Modifier.fillMaxWidth())
 
-                list.isEmpty() -> Text("No saved projects yet.")
+                list.isEmpty() -> Text(stringResource(R.string.canvas_no_projects))
 
                 else -> LazyColumn(Modifier.height(420.dp)) {
                     items(list, key = { it.file.path }) { info ->
@@ -479,27 +481,27 @@ fun OpenProjectDialog(onOpen: (ProjectInfo) -> Unit, onDismiss: () -> Unit) {
                                     style = MaterialTheme.typography.bodySmall,
                                 )
                             }
-                            IconButton(onClick = { toDelete = info }) { Icon(Icons.Default.Delete, "Delete") }
+                            IconButton(onClick = { toDelete = info }) { Icon(Icons.Default.Delete, stringResource(R.string.canvas_delete)) }
                         }
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.canvas_close)) } },
     )
     toDelete?.let { info ->
         AlertDialog(
             onDismissRequest = { toDelete = null },
-            title = { Text("Delete \"${info.name}\"?") },
-            text = { Text("The project will be deleted. Images already in the history are not affected.") },
+            title = { Text(stringResource(R.string.canvas_delete_project_title, info.name)) },
+            text = { Text(stringResource(R.string.canvas_delete_project_text)) },
             confirmButton = {
                 TextButton(onClick = {
                     ProjectStore.delete(info)
                     toDelete = null
                     refresh++
-                }) { Text("Delete") }
+                }) { Text(stringResource(R.string.canvas_delete)) }
             },
-            dismissButton = { TextButton(onClick = { toDelete = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { toDelete = null }) { Text(stringResource(R.string.canvas_cancel)) } },
         )
     }
 }
@@ -565,7 +567,7 @@ fun MagicOverlay(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 // The drawing, floating.
-                Text("Your drawing", color = Color.White.copy(alpha = 0.7f), fontSize = 13.sp)
+                Text(stringResource(R.string.canvas_your_drawing), color = Color.White.copy(alpha = 0.7f), fontSize = 13.sp)
                 Spacer(Modifier.height(6.dp))
                 Box(
                     Modifier
@@ -617,12 +619,12 @@ fun MagicOverlay(
                                 )
                                 Spacer(Modifier.height(12.dp))
                                 Text(
-                                    if (state.progress > 0f) "${(state.progress * 100).roundToInt()}%" else "Preparing…",
+                                    if (state.progress > 0f) "${(state.progress * 100).roundToInt()}%" else stringResource(R.string.canvas_preparing),
                                     color = Color.White,
                                     fontWeight = FontWeight.Bold,
                                 )
                                 if (state.total > 1) {
-                                    Text("Image ${state.index} of ${state.total}", color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
+                                    Text(stringResource(R.string.canvas_image_n_of, state.index, state.total), color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
                                 }
                             }
                             LinearProgressIndicator(
@@ -659,7 +661,7 @@ fun MagicOverlay(
                             val isSel = state is CanvasAiState.Done && i == selected
                             Image(
                                 bmp.asImageBitmap(),
-                                "Result ${i + 1}",
+                                stringResource(R.string.canvas_result_n, i + 1),
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
                                     .size(56.dp)
@@ -683,7 +685,7 @@ fun MagicOverlay(
                     }
                     if (state is CanvasAiState.Done) {
                         Text(
-                            "${selected + 1} / ${state.results.size}: tap a thumbnail to pick",
+                            stringResource(R.string.canvas_pick_hint, selected + 1, state.results.size),
                             color = Color.White.copy(alpha = 0.6f),
                             fontSize = 12.sp,
                             modifier = Modifier.padding(top = 4.dp),
@@ -694,19 +696,19 @@ fun MagicOverlay(
                 when (state) {
                     is CanvasAiState.Done -> {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("On accept:", color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
+                            Text(stringResource(R.string.canvas_on_accept), color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
                             Spacer(Modifier.width(8.dp))
                             SingleChoiceSegmentedButtonRow {
                                 SegmentedButton(
                                     selected = acceptMode == AcceptMode.NEW_LAYER,
                                     onClick = { onAcceptModeChange(AcceptMode.NEW_LAYER) },
                                     shape = SegmentedButtonDefaults.itemShape(0, 2),
-                                ) { Text("New layer", fontSize = 12.sp) }
+                                ) { Text(stringResource(R.string.canvas_new_layer), fontSize = 12.sp) }
                                 SegmentedButton(
                                     selected = acceptMode == AcceptMode.FLATTEN,
                                     onClick = { onAcceptModeChange(AcceptMode.FLATTEN) },
                                     shape = SegmentedButtonDefaults.itemShape(1, 2),
-                                ) { Text("Flatten", fontSize = 12.sp) }
+                                ) { Text(stringResource(R.string.canvas_flatten), fontSize = 12.sp) }
                             }
                         }
                         Spacer(Modifier.height(12.dp))
@@ -716,24 +718,24 @@ fun MagicOverlay(
                                     onClick = onReject,
                                     modifier = Modifier.size(68.dp),
                                     colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color(0xFFD9534F)),
-                                ) { Icon(Icons.Default.Close, "Reject", modifier = Modifier.size(36.dp), tint = Color.White) }
+                                ) { Icon(Icons.Default.Close, stringResource(R.string.canvas_reject), modifier = Modifier.size(36.dp), tint = Color.White) }
                                 FilledIconButton(
                                     onClick = { onAccept(state.results[selected.coerceIn(0, state.results.lastIndex)]) },
                                     modifier = Modifier.size(68.dp),
                                     colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color(0xFF3FA34D)),
-                                ) { Icon(Icons.Default.Check, "Accept", modifier = Modifier.size(36.dp), tint = Color.White) }
+                                ) { Icon(Icons.Default.Check, stringResource(R.string.canvas_accept), modifier = Modifier.size(36.dp), tint = Color.White) }
                             }
                         }
                     }
 
-                    is CanvasAiState.Error -> Button(onClick = onReject) { Text("Back to canvas") }
+                    is CanvasAiState.Error -> Button(onClick = onReject) { Text(stringResource(R.string.canvas_back_to_canvas)) }
 
                     else -> Button(
                         onClick = onCancel,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF555B63)),
                     ) {
                         val partial = (state as? CanvasAiState.Running)?.done.orEmpty()
-                        Text(if (partial.isNotEmpty()) "Stop and pick from ${partial.size}" else "Cancel generation")
+                        Text(if (partial.isNotEmpty()) pluralStringResource(R.plurals.canvas_stop_and_pick, partial.size, partial.size) else stringResource(R.string.canvas_cancel_generation))
                     }
                 }
             }
@@ -761,24 +763,21 @@ internal fun AspectMismatchDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Different aspect ratio") },
+        title = { Text(stringResource(R.string.canvas_aspect_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    "The canvas is $docW×$docH but the model generates $modelW×$modelH. " +
-                        "Generating as is stretches the drawing and the result.",
-                )
+                Text(stringResource(R.string.canvas_aspect_text, docW, docH, modelW, modelH))
                 androidx.compose.material3.OutlinedButton(onClick = { onResize(false) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Resize canvas: fit (keep everything, add margins)")
+                    Text(stringResource(R.string.canvas_aspect_fit))
                 }
                 androidx.compose.material3.OutlinedButton(onClick = { onResize(true) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Resize canvas: fill (crop the edges)")
+                    Text(stringResource(R.string.canvas_aspect_fill))
                 }
                 androidx.compose.material3.OutlinedButton(onClick = onStretch, modifier = Modifier.fillMaxWidth()) {
-                    Text("Generate anyway (stretched)")
+                    Text(stringResource(R.string.canvas_aspect_anyway))
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.canvas_cancel)) } },
     )
 }

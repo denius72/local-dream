@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings: Local Dream Canvas Options -->
+    <string name="canvas_options_title">Параметры Local Dream Canvas</string>
+    <string name="canvas_options_version">Версия форка %1$s</string>
+    <string name="canvas_update_check">Проверить обновления форка</string>
+    <string name="canvas_update_check_hint">Установлена: %1$s</string>
+    <string name="canvas_update_found">Найдена версия %1$s</string>
+    <string name="canvas_update_latest">У вас уже последняя версия</string>
+    <string name="canvas_update_failed">Не удалось проверить обновления</string>
+    <string name="canvas_opt_metadata">Сохранять промпт в метаданных изображения</string>
+    <string name="canvas_opt_metadata_hint">Сохранённые PNG содержат промпт и параметры (формат A1111), чтобы их можно было загрузить позже. Выключите, чтобы сохранять изображения без метаданных, как в оригинальном Local Dream.</string>
+    <string name="canvas_opt_long_press">Удержание берёт цвет</string>
+    <string name="canvas_opt_long_press_hint">На холсте удерживайте палец или перо неподвижно с инструментом рисования, чтобы включить пипетку; отпустите — и снова рисуете.</string>
+    <string name="canvas_opt_loupe">Лупа пипетки</string>
+    <string name="canvas_opt_loupe_hint">Показывает увеличенный вид с перекрестием над пальцем, пока вы выбираете цвет.</string>
+    <string name="canvas_opt_loupe_zoom">Увеличение лупы</string>
+
+    <string name="canvas_port_title">Порт локального бэкенда</string>
+    <string name="canvas_port_hint">Порт, который слушает бэкенд генерации (по умолчанию %1$d). Если оригинальный Local Dream тоже установлен и запущен, выберите другой порт (например, 8091), чтобы приложения не обращались к бэкенду друг друга. Режим хоста для удалённых устройств ожидает %1$d.</string>
+    <string name="canvas_port_label">Порт</string>
+    <string name="canvas_port_set">Порт бэкенда изменён на %1$d</string>
+
+    <!-- Tools -->
+    <string name="canvas_tool_pen">Перо</string>
+    <string name="canvas_tool_airbrush">Аэрограф</string>
+    <string name="canvas_tool_eraser">Ластик</string>
+    <string name="canvas_tool_blur">Размытие</string>
+    <string name="canvas_tool_smudge">Палец</string>
+    <string name="canvas_tool_inpaint">Маска inpaint</string>
+    <string name="canvas_tool_fill">Заливка</string>
+    <string name="canvas_tool_eyedropper">Пипетка</string>
+    <string name="canvas_tool_select_rect">Прямоугольное выделение</string>
+    <string name="canvas_tool_lasso">Лассо</string>
+    <string name="canvas_tool_wand">Волшебная палочка</string>
+    <string name="canvas_tool_move">Перемещение / трансформация</string>
+    <string name="canvas_tool_hand">Рука</string>
+
+    <!-- Top and bottom bars -->
+    <string name="canvas_undo">Отменить</string>
+    <string name="canvas_redo">Повторить</string>
+    <string name="canvas_generate">Создать</string>
+    <string name="canvas_generation_settings">Параметры генерации</string>
+    <string name="canvas_menu">Меню</string>
+    <string name="canvas_selection">Выделение</string>
+    <string name="canvas_transform">Трансформация</string>
+    <string name="canvas_brush">Кисть</string>
+    <string name="canvas_color">Цвет</string>
+    <string name="canvas_layers">Слои</string>
+    <string name="canvas_color_panel">Панель цвета</string>
+
+    <!-- Tool option bar -->
+    <string name="canvas_mask_paint">Рисовать</string>
+    <string name="canvas_mask_erase">Стереть</string>
+    <string name="canvas_clear">Очистить</string>
+    <string name="canvas_correction_label">КОРРЕКЦИЯ</string>
+    <string name="canvas_sel_new">Новое</string>
+    <string name="canvas_sel_add">Добавить</string>
+    <string name="canvas_sel_subtract">Вычесть</string>
+    <string name="canvas_deselect">Снять</string>
+    <string name="canvas_tolerance">Допуск %1$d</string>
+    <string name="canvas_sample_all">Все</string>
+    <string name="canvas_move_hint">Тяните, чтобы двигать · 2 пальца: масштаб/поворот</string>
+    <string name="canvas_cancel">Отмена</string>
+    <string name="canvas_apply">Применить</string>
+    <string name="canvas_zoom">Масштаб %1$d%%</string>
+    <string name="canvas_zoom_rotation">Масштаб %1$d%% · %2$d°</string>
+    <string name="canvas_fit">Вписать</string>
+    <string name="canvas_eyedropper_hint">Нажмите или ведите, чтобы взять цвет; отпустите — вернётся прежний инструмент</string>
+
+    <!-- Messages -->
+    <string name="canvas_project_saved">Проект \"%1$s\" сохранён</string>
+    <string name="canvas_save_failed">Ошибка сохранения: %1$s</string>
+    <string name="canvas_open_failed">Ошибка открытия: %1$s</string>
+    <string name="canvas_generation_running">Генерация уже идёт</string>
+    <string name="canvas_img2img_disabled_toast">Для этой модели img2img выключен: генерация только по промпту</string>
+    <string name="canvas_mask_ignored">Эта модель не использует маски; маска inpaint проигнорирована</string>
+    <string name="canvas_no_free_layers_toast">Нет свободных слоёв (%1$d): при принятии придётся свести слои</string>
+    <string name="canvas_image_open_failed">Не удалось открыть изображение</string>
+    <string name="canvas_layer_limit">Достигнут предел слоёв (%1$d)</string>
+    <string name="canvas_no_saved_prompt">В этом изображении нет сохранённого промпта</string>
+    <string name="canvas_prompt_loaded">Промпт загружен</string>
+    <string name="canvas_selection_to_mask_done">Выделение скопировано в маску inpaint</string>
+    <string name="canvas_copied">Скопировано</string>
+    <string name="canvas_nothing_copied">Ничего не скопировано</string>
+    <string name="canvas_image_saved">Изображение сохранено в галерею (с промптом)</string>
+    <string name="canvas_project_size_differs">Проект %1$d×%2$d, а модель использует %3$d×%4$d. При необходимости измените размер в меню проекта</string>
+    <string name="canvas_layer_hidden">Выбранный слой скрыт</string>
+    <string name="canvas_no_layer_below">Ниже нет слоя</string>
+    <string name="canvas_one_layer_required">Нужен хотя бы один слой</string>
+
+    <!-- Project menu -->
+    <string name="canvas_untitled_project">Проект без названия</string>
+    <plurals name="canvas_doc_info">
+        <item quantity="one">%1$d×%2$d · %3$d слой</item>
+        <item quantity="few">%1$d×%2$d · %3$d слоя</item>
+        <item quantity="many">%1$d×%2$d · %3$d слоёв</item>
+        <item quantity="other">%1$d×%2$d · %3$d слоя</item>
+    </plurals>
+    <string name="canvas_unsaved_suffix"> · не сохранено</string>
+    <string name="canvas_new_canvas">Новый холст</string>
+    <string name="canvas_open_project_menu">Открыть проект…</string>
+    <string name="canvas_save">Сохранить</string>
+    <string name="canvas_save_as">Сохранить как…</string>
+    <string name="canvas_save_and_quit">Сохранить и выйти</string>
+    <string name="canvas_export_image">Экспорт изображения в галерею</string>
+    <string name="canvas_export_title">Экспорт изображения</string>
+    <string name="canvas_export_transparent">Сохранить прозрачность</string>
+    <string name="canvas_export_transparent_hint">Незакрашенные области останутся прозрачными, а не цвета бумаги.</string>
+    <string name="canvas_export">Экспорт</string>
+    <string name="canvas_export_all_hidden">Все слои скрыты: изображение будет полностью прозрачным</string>
+    <string name="canvas_import_layer">Импорт изображения как слоя</string>
+    <string name="canvas_resize_fit">Изменить холст на %1$d×%2$d (вписать)</string>
+    <string name="canvas_resize_fill">Изменить холст на %1$d×%2$d (заполнить, обрезать края)</string>
+    <string name="canvas_leave">Выйти из холста</string>
+    <string name="canvas_close">Закрыть</string>
+    <string name="canvas_save_project">Сохранить проект</string>
+    <string name="canvas_default_project_name">Рисунок %1$s</string>
+    <string name="canvas_leave_title">Выйти из холста?</string>
+    <string name="canvas_leave_text">Есть несохранённые изменения.</string>
+    <string name="canvas_discard">Отбросить</string>
+    <string name="canvas_new_title">Новый холст?</string>
+    <string name="canvas_new_text">Несохранённые изменения будут потеряны.</string>
+    <string name="canvas_discard_and_create">Отбросить и создать</string>
+    <string name="canvas_rename_layer">Переименовать слой</string>
+
+    <!-- Generation settings -->
+    <string name="canvas_generation">Генерация</string>
+    <string name="canvas_denoise">Denoise strength</string>
+    <string name="canvas_denoise_hint">Низкое значение сохраняет рисунок, высокое позволяет ИИ менять больше.</string>
+    <string name="canvas_batch_count">Количество</string>
+    <string name="canvas_batch_seed_set">Задан seed, поэтому создаётся только одно изображение.</string>
+    <string name="canvas_batch_hint">Создаёт несколько изображений подряд; вы выбираете, какое оставить.</string>
+    <string name="canvas_advanced_settings">Steps, CFG, seed, sampler…</string>
+    <string name="canvas_load_prompt_history">Загрузить промпт из истории Local Dream</string>
+    <string name="canvas_load_prompt_png">Загрузить промпт из PNG-изображения</string>
+    <string name="canvas_mode_txt2img_only">img2img выключен: холст генерирует только по промпту.</string>
+    <string name="canvas_mode_inpaint">Нарисована маска inpaint: будет перерисована только красная область (inpaint).</string>
+    <string name="canvas_mode_img2img">Весь рисунок отправляется как img2img. Пустой холст = txt2img. Чтобы перерисовать только часть, закрасьте её инструментом «Маска inpaint» (значок пластыря) или используйте Выделение → Использовать как маску inpaint.</string>
+    <string name="canvas_ok">OK</string>
+    <string name="canvas_no_free_layers">Нет свободных слоёв</string>
+    <plurals name="canvas_layer_limit_text">
+        <item quantity="one">Для этого размера холста предел — %1$d слой. Объедините или удалите слои либо сведите всё и примените результат.</item>
+        <item quantity="few">Для этого размера холста предел — %1$d слоя. Объедините или удалите слои либо сведите всё и примените результат.</item>
+        <item quantity="many">Для этого размера холста предел — %1$d слоёв. Объедините или удалите слои либо сведите всё и примените результат.</item>
+        <item quantity="other">Для этого размера холста предел — %1$d слоя. Объедините или удалите слои либо сведите всё и примените результат.</item>
+    </plurals>
+    <string name="canvas_flatten_and_apply">Свести и применить</string>
+    <string name="canvas_back">Назад</string>
+
+    <!-- Brush settings -->
+    <string name="canvas_tool_settings">Настройки: %1$s</string>
+    <string name="canvas_size">Размер</string>
+    <string name="canvas_inpaint_hint">Закрасьте область, которую ИИ должен перерисовать (показана красным). Затем волшебная кнопка сделает в ней inpaint.</string>
+    <string name="canvas_mask_feather">Растушёвка края маски</string>
+    <string name="canvas_opacity">Непрозрачность</string>
+    <string name="canvas_hardness">Жёсткость</string>
+    <string name="canvas_flow">Поток</string>
+    <string name="canvas_strength">Сила</string>
+    <string name="canvas_spacing">Интервал</string>
+    <string name="canvas_pressure_size">Нажим → размер</string>
+    <string name="canvas_min_size">Минимальный размер</string>
+    <string name="canvas_pressure_opacity">Нажим → непрозрачность</string>
+    <string name="canvas_section_canvas">Холст</string>
+    <string name="canvas_correction">Коррекция (стабилизатор)</string>
+    <string name="canvas_use_pen_pressure">Учитывать нажим S Pen</string>
+    <string name="canvas_stylus_only">Рисует только S Pen (пальцы двигают вид)</string>
+    <string name="canvas_default">По умолчанию</string>
+
+    <!-- Generate hint -->
+    <string name="canvas_hint_title">Перед генерацией</string>
+    <string name="canvas_hint_text">Не забудьте сначала проверить промпт и настройки модели! Они за шестерёнкой, рядом с волшебной кнопкой.</string>
+    <string name="canvas_hint_image_desc">Кнопка-шестерёнка рядом с волшебной кнопкой</string>
+    <string name="canvas_dont_show_again">Больше не показывать</string>
+
+    <!-- Color picker -->
+    <string name="canvas_recent">Недавние</string>
+
+    <!-- Selection menu -->
+    <string name="canvas_selection_mode">Режим инструмента выделения</string>
+    <string name="canvas_select_all">Выделить всё</string>
+    <string name="canvas_invert_selection">Инвертировать выделение</string>
+    <string name="canvas_use_as_mask">Использовать как маску inpaint</string>
+    <string name="canvas_cut">Вырезать</string>
+    <string name="canvas_copy">Копировать</string>
+    <string name="canvas_paste">Вставить (новый слой)</string>
+    <string name="canvas_clear_contents">Очистить содержимое</string>
+    <string name="canvas_wand_tolerance">Допуск волшебной палочки</string>
+    <string name="canvas_fill_tolerance">Допуск заливки</string>
+    <string name="canvas_fill_sample_all">Заливка учитывает все слои</string>
+    <string name="canvas_mask_feather_ai">Растушёвка края маски (ИИ)</string>
+
+    <!-- Projects -->
+    <string name="canvas_name">Название</string>
+    <string name="canvas_open_project">Открыть проект</string>
+    <string name="canvas_no_projects">Сохранённых проектов пока нет.</string>
+    <string name="canvas_delete">Удалить</string>
+    <string name="canvas_delete_project_title">Удалить \"%1$s\"?</string>
+    <string name="canvas_delete_project_text">Проект будет удалён. Изображения, которые уже есть в истории, не затрагиваются.</string>
+
+    <!-- AI result screen -->
+    <string name="canvas_your_drawing">Ваш рисунок</string>
+    <string name="canvas_preparing">Подготовка…</string>
+    <string name="canvas_image_n_of">Изображение %1$d из %2$d</string>
+    <string name="canvas_result_n">Результат %1$d</string>
+    <string name="canvas_pick_hint">%1$d / %2$d: нажмите на миниатюру, чтобы выбрать</string>
+    <string name="canvas_on_accept">При принятии:</string>
+    <string name="canvas_new_layer">Новый слой</string>
+    <string name="canvas_flatten">Свести</string>
+    <string name="canvas_reject">Отклонить</string>
+    <string name="canvas_accept">Принять</string>
+    <string name="canvas_back_to_canvas">Вернуться к холсту</string>
+    <plurals name="canvas_stop_and_pick">
+        <item quantity="one">Остановить и выбрать из %1$d</item>
+        <item quantity="few">Остановить и выбрать из %1$d</item>
+        <item quantity="many">Остановить и выбрать из %1$d</item>
+        <item quantity="other">Остановить и выбрать из %1$d</item>
+    </plurals>
+    <string name="canvas_cancel_generation">Отменить генерацию</string>
+
+    <!-- Aspect ratio dialog -->
+    <string name="canvas_aspect_title">Другое соотношение сторон</string>
+    <string name="canvas_aspect_text">Холст %1$d×%2$d, а модель генерирует %3$d×%4$d. Если генерировать так, рисунок и результат растянутся.</string>
+    <string name="canvas_aspect_fit">Изменить холст: вписать (всё сохранится, добавятся поля)</string>
+    <string name="canvas_aspect_fill">Изменить холст: заполнить (края обрежутся)</string>
+    <string name="canvas_aspect_anyway">Всё равно создать (растянуто)</string>
+
+    <!-- Layers panel -->
+    <string name="canvas_duplicate">Дублировать</string>
+    <string name="canvas_merge_down">Объединить с нижним</string>
+    <string name="canvas_move_up">Выше</string>
+    <string name="canvas_move_down">Ниже</string>
+    <string name="canvas_layer_opacity">Непрозр. %1$d%%</string>
+    <plurals name="canvas_layer_count">
+        <item quantity="one">%1$d/%2$d слой</item>
+        <item quantity="few">%1$d/%2$d слоя</item>
+        <item quantity="many">%1$d/%2$d слоёв</item>
+        <item quantity="other">%1$d/%2$d слоя</item>
+    </plurals>
+    <string name="canvas_visibility">Видимость</string>
+
+    <!-- History prompt picker -->
+    <string name="canvas_history_title">Загрузить промпт из истории</string>
+    <string name="canvas_history_empty">История пуста.</string>
+    <string name="canvas_no_prompt">(без промпта)</string>
+</resources>

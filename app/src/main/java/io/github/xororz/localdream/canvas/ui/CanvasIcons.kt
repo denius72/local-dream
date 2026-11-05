@@ -1,5 +1,8 @@
 package io.github.xororz.localdream.canvas.ui
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import io.github.xororz.localdream.R
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
@@ -88,21 +91,24 @@ object CanvasIcons {
         CanvasTool.HAND -> Icons.Default.PanTool
     }
 
-    fun label(tool: CanvasTool): String = when (tool) {
-        CanvasTool.PEN -> "Pen"
-        CanvasTool.AIRBRUSH -> "Airbrush"
-        CanvasTool.ERASER -> "Eraser"
-        CanvasTool.BLUR -> "Blur"
-        CanvasTool.SMUDGE -> "Smudge"
-        CanvasTool.INPAINT -> "Inpaint mask"
-        CanvasTool.FILL -> "Fill"
-        CanvasTool.EYEDROPPER -> "Eyedropper"
-        CanvasTool.SELECT_RECT -> "Rectangle select"
-        CanvasTool.SELECT_LASSO -> "Lasso"
-        CanvasTool.SELECT_WAND -> "Magic wand"
-        CanvasTool.MOVE -> "Move / transform"
-        CanvasTool.HAND -> "Hand"
+    fun labelRes(tool: CanvasTool): Int = when (tool) {
+        CanvasTool.PEN -> R.string.canvas_tool_pen
+        CanvasTool.AIRBRUSH -> R.string.canvas_tool_airbrush
+        CanvasTool.ERASER -> R.string.canvas_tool_eraser
+        CanvasTool.BLUR -> R.string.canvas_tool_blur
+        CanvasTool.SMUDGE -> R.string.canvas_tool_smudge
+        CanvasTool.INPAINT -> R.string.canvas_tool_inpaint
+        CanvasTool.FILL -> R.string.canvas_tool_fill
+        CanvasTool.EYEDROPPER -> R.string.canvas_tool_eyedropper
+        CanvasTool.SELECT_RECT -> R.string.canvas_tool_select_rect
+        CanvasTool.SELECT_LASSO -> R.string.canvas_tool_lasso
+        CanvasTool.SELECT_WAND -> R.string.canvas_tool_wand
+        CanvasTool.MOVE -> R.string.canvas_tool_move
+        CanvasTool.HAND -> R.string.canvas_tool_hand
     }
+
+    @Composable
+    fun label(tool: CanvasTool): String = stringResource(labelRes(tool))
 
     val Undo get() = Icons.AutoMirrored.Filled.Undo
     val Redo get() = Icons.AutoMirrored.Filled.Redo

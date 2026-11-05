@@ -1,5 +1,12 @@
 package io.github.xororz.localdream.canvas.ui
 
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.material3.Checkbox
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import io.github.xororz.localdream.R
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -175,6 +182,7 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
     var showGenSettings by remember { mutableStateOf(false) }
     var showHistoryPicker by remember { mutableStateOf(false) }
     var showOpen by remember { mutableStateOf(false) }
+    var showExport by remember { mutableStateOf(false) }
     var nameDialog by remember { mutableStateOf<String?>(null) } // "save" | "saveQuit"
     var confirmExit by remember { mutableStateOf(false) }
     var confirmNew by remember { mutableStateOf(false) }
@@ -187,6 +195,8 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
     var generateAfterResize by remember { mutableStateOf(false) }
 
     fun toast(msg: String) = Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+    val resources = LocalResources.current
+    fun str(id: Int, vararg args: Any): String = resources.getString(id, *args)
 
     fun saveProject(name: String, then: () -> Unit = {}) {
         val clean = ProjectStore.sanitize(name)
@@ -202,9 +212,9 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
             ok.onSuccess {
                 projectName = clean
                 savedCounter = doc.dirtyCounter
-                toast("Project \"$clean\" saved")
+                toast(str(R.string.canvas_project_saved, clean))
                 then()
-            }.onFailure { toast("Failed to save: ${it.message}") }
+            }.onFailure { toast(str(R.string.canvas_save_failed, it.message ?: "")) }
         }
     }
 
@@ -235,21 +245,21 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
         }
         editor.commitTransform()
         if (host.isBusy()) {
-            toast("A generation is already running")
+            toast(str(R.string.canvas_generation_running))
             return
         }
         val flat = doc.compositeVisible(includePaper = true)
         val blank = doc.isBlank()
-        if (!blank && !host.canImg2img) toast("img2img is disabled for this model: generating from the prompt only")
+        if (!blank && !host.canImg2img) toast(str(R.string.canvas_img2img_disabled_toast))
         val useImage = !blank && host.canImg2img
         val sel = doc.inpaintMask
         val mask = if (useImage && sel != null) {
-            if (host.canInpaint) sel.toInpaintMask(editor.maskFeather) else null.also { toast("This model does not use masks; the inpaint mask was ignored") }
+            if (host.canInpaint) sel.toInpaintMask(editor.maskFeather) else null.also { toast(str(R.string.canvas_mask_ignored)) }
         } else {
             null
         }
         if (editor.acceptMode == AcceptMode.NEW_LAYER && !doc.canAddLayer()) {
-            toast("No free layers (${doc.maxLayers}): you will need to flatten on accept")
+            toast(str(R.string.canvas_no_free_layers_toast, doc.maxLayers))
         }
         if (host.generate(if (useImage) flat else null, mask)) magicSource = flat
     }
@@ -282,10 +292,10 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                 runCatching { context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) } }.getOrNull()
             }
             if (bmp == null) {
-                toast("Could not open the image")
+                toast(str(R.string.canvas_image_open_failed))
                 return@launch
             }
-            if (doc.addLayer("Image", fitIntoDoc(doc, bmp)) == null) toast("Layer limit (${doc.maxLayers}) reached")
+            if (doc.addLayer("Image", fitIntoDoc(doc, bmp)) == null) toast(str(R.string.canvas_layer_limit, doc.maxLayers))
         }
     }
 
@@ -299,10 +309,10 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
             }
             val parsed = text?.let { A1111Params.parse(it) }
             if (parsed == null) {
-                toast("This image has no saved prompt")
+                toast(str(R.string.canvas_no_saved_prompt))
             } else {
                 host.applyPrompt(parsed.prompt, parsed.negativePrompt)
-                toast("Prompt loaded")
+                toast(str(R.string.canvas_prompt_loaded))
             }
         }
     }
@@ -349,7 +359,7 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                 ) {
                     Icon(
                         if (showColorPanel) Icons.AutoMirrored.Filled.KeyboardArrowLeft else Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "Color panel",
+                        contentDescription = stringResource(R.string.canvas_color_panel),
                         tint = Color.DarkGray,
                     )
                 }
@@ -375,13 +385,13 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
-                BarButton(CanvasIcons.Undo, "Undo", enabled = doc.canUndo) { doc.undo() }
-                BarButton(CanvasIcons.Redo, "Redo", enabled = doc.canRedo) { doc.redo() }
-                BarButton(Icons.Default.Colorize, "Eyedropper", selected = editor.tool == CanvasTool.EYEDROPPER) {
+                BarButton(CanvasIcons.Undo, stringResource(R.string.canvas_undo), enabled = doc.canUndo) { doc.undo() }
+                BarButton(CanvasIcons.Redo, stringResource(R.string.canvas_redo), enabled = doc.canRedo) { doc.redo() }
+                BarButton(Icons.Default.Colorize, stringResource(R.string.canvas_tool_eyedropper), selected = editor.tool == CanvasTool.EYEDROPPER) {
                     editor.selectTool(CanvasTool.EYEDROPPER)
                 }
-                BarButton(Icons.Default.Edit, "Pen", selected = editor.tool == CanvasTool.PEN) { editor.selectTool(CanvasTool.PEN) }
-                BarButton(CanvasIcons.Eraser, "Eraser", selected = editor.tool == CanvasTool.ERASER) {
+                BarButton(Icons.Default.Edit, stringResource(R.string.canvas_tool_pen), selected = editor.tool == CanvasTool.PEN) { editor.selectTool(CanvasTool.PEN) }
+                BarButton(CanvasIcons.Eraser, stringResource(R.string.canvas_tool_eraser), selected = editor.tool == CanvasTool.ERASER) {
                     editor.selectTool(CanvasTool.ERASER)
                 }
                 // The magic button, labelled with what it will run.
@@ -401,7 +411,7 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                     contentAlignment = Alignment.Center,
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.AutoFixHigh, "Generate", tint = Color.White, modifier = Modifier.size(24.dp))
+                        Icon(Icons.Default.AutoFixHigh, stringResource(R.string.canvas_generate), tint = Color.White, modifier = Modifier.size(24.dp))
                         Text(
                             modeLabel,
                             color = if (modeLabel == "INPAINT") Color(0xFFFFCDD2) else Color.White,
@@ -411,7 +421,7 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                         )
                     }
                 }
-                BarButton(Icons.Default.Settings, "Generation settings") { showGenSettings = true }
+                BarButton(Icons.Default.Settings, stringResource(R.string.canvas_generation_settings)) { showGenSettings = true }
             }
             // Row 2: menus and panels.
             Row(
@@ -422,13 +432,13 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
-                BarButton(Icons.Default.Menu, "Menu") { showProjectMenu = true }
-                BarButton(CanvasIcons.SelectionMenu, "Selection", selected = doc.selection != null) { showSelectionMenu = true }
-                BarButton(Icons.Default.OpenWith, "Transform", selected = editor.tool == CanvasTool.MOVE) { editor.selectTool(CanvasTool.MOVE) }
+                BarButton(Icons.Default.Menu, stringResource(R.string.canvas_menu)) { showProjectMenu = true }
+                BarButton(CanvasIcons.SelectionMenu, stringResource(R.string.canvas_selection), selected = doc.selection != null) { showSelectionMenu = true }
+                BarButton(Icons.Default.OpenWith, stringResource(R.string.canvas_transform), selected = editor.tool == CanvasTool.MOVE) { editor.selectTool(CanvasTool.MOVE) }
                 Box(Modifier.width(1.dp).height(32.dp).background(Color.White.copy(alpha = 0.15f)))
-                BarButton(Icons.Default.Brush, "Brush") { showBrushSettings = true }
-                BarButton(Icons.Default.Palette, "Color", selected = showColorPanel) { showColorPicker = true }
-                BarButton(Icons.Default.Layers, "Layers", selected = showLayers) { showLayers = !showLayers }
+                BarButton(Icons.Default.Brush, stringResource(R.string.canvas_brush)) { showBrushSettings = true }
+                BarButton(Icons.Default.Palette, stringResource(R.string.canvas_color), selected = showColorPanel) { showColorPicker = true }
+                BarButton(Icons.Default.Layers, stringResource(R.string.canvas_layers), selected = showLayers) { showLayers = !showLayers }
             }
         }
     }
@@ -484,13 +494,13 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                 "invert" -> doc.changeSelection(Selection.invert(doc.selection, doc.width, doc.height))
                 "to_mask" -> doc.selection?.let {
                     doc.inpaintMask = it
-                    toast("Selection copied to the inpaint mask")
+                    toast(str(R.string.canvas_selection_to_mask_done))
                 }
                 "cut" -> editor.cutSelection()
-                "copy" -> if (editor.copySelection()) toast("Copied")
+                "copy" -> if (editor.copySelection()) toast(str(R.string.canvas_copied))
                 "paste" -> when (editor.paste()) {
-                    CanvasEditorState.PasteResult.NO_ROOM -> toast("Layer limit (${doc.maxLayers}) reached")
-                    CanvasEditorState.PasteResult.EMPTY -> toast("Nothing copied")
+                    CanvasEditorState.PasteResult.NO_ROOM -> toast(str(R.string.canvas_layer_limit, doc.maxLayers))
+                    CanvasEditorState.PasteResult.EMPTY -> toast(str(R.string.canvas_nothing_copied))
                     else -> Unit
                 }
                 "delete" -> doc.clearActive()
@@ -503,66 +513,100 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
     if (showProjectMenu) {
         AlertDialog(
             onDismissRequest = { showProjectMenu = false },
-            title = { Text(projectName ?: "Untitled project") },
+            title = { Text(projectName ?: stringResource(R.string.canvas_untitled_project)) },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
-                    Text("${doc.width}×${doc.height} · ${doc.layers.size} layers" + if (isDirty) " · unsaved" else "", style = MaterialTheme.typography.bodySmall)
-                    MenuRow("New canvas") {
+                    Text(pluralStringResource(R.plurals.canvas_doc_info, doc.layers.size, doc.width, doc.height, doc.layers.size) + if (isDirty) stringResource(R.string.canvas_unsaved_suffix) else "", style = MaterialTheme.typography.bodySmall)
+                    MenuRow(stringResource(R.string.canvas_new_canvas)) {
                         showProjectMenu = false
                         if (isDirty) confirmNew = true else doc = newDocument(host.width, host.height, null).also { projectName = null }
                     }
-                    MenuRow("Open project…") {
+                    MenuRow(stringResource(R.string.canvas_open_project_menu)) {
                         showProjectMenu = false
                         showOpen = true
                     }
-                    MenuRow("Save") {
+                    MenuRow(stringResource(R.string.canvas_save)) {
                         showProjectMenu = false
                         save()
                     }
-                    MenuRow("Save as…") {
+                    MenuRow(stringResource(R.string.canvas_save_as)) {
                         showProjectMenu = false
                         nameDialog = "save"
                     }
-                    MenuRow("Save and quit") {
+                    MenuRow(stringResource(R.string.canvas_save_and_quit)) {
                         showProjectMenu = false
                         save(onClose)
                     }
                     HorizontalDivider()
-                    MenuRow("Export image to gallery") {
+                    MenuRow(stringResource(R.string.canvas_export_image)) {
                         showProjectMenu = false
-                        editor.commitTransform()
-                        val flat = doc.compositeVisible(includePaper = true)
-                        scope.launch { if (host.saveToGallery(flat)) toast("Image saved to gallery (with prompt)") }
+                        showExport = true
                     }
-                    MenuRow("Import image as layer") {
+                    MenuRow(stringResource(R.string.canvas_import_layer)) {
                         showProjectMenu = false
                         importImageLauncher.launch("image/*")
                     }
                     if (doc.width != host.width || doc.height != host.height) {
-                        MenuRow("Resize canvas to ${host.width}×${host.height} (fit)") {
+                        MenuRow(stringResource(R.string.canvas_resize_fit, host.width, host.height)) {
                             showProjectMenu = false
                             resizeDoc(fill = false)
                         }
-                        MenuRow("Resize canvas to ${host.width}×${host.height} (fill, crop edges)") {
+                        MenuRow(stringResource(R.string.canvas_resize_fill, host.width, host.height)) {
                             showProjectMenu = false
                             resizeDoc(fill = true)
                         }
                     }
                     HorizontalDivider()
-                    MenuRow("Leave canvas") {
+                    MenuRow(stringResource(R.string.canvas_leave)) {
                         showProjectMenu = false
                         requestExit()
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { showProjectMenu = false }) { Text("Close") } },
+            confirmButton = { TextButton(onClick = { showProjectMenu = false }) { Text(stringResource(R.string.canvas_close)) } },
+        )
+    }
+
+    if (showExport) {
+        var transparent by remember { mutableStateOf(editor.exportTransparent) }
+        AlertDialog(
+            onDismissRequest = { showExport = false },
+            title = { Text(stringResource(R.string.canvas_export_title)) },
+            text = {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { transparent = !transparent },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(checked = transparent, onCheckedChange = { transparent = it })
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.canvas_export_transparent))
+                        Text(stringResource(R.string.canvas_export_transparent_hint), style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showExport = false
+                    editor.exportTransparent = transparent
+                    editor.savePrefs()
+                    editor.commitTransform()
+                    if (transparent && doc.layers.none { it.visible }) toast(str(R.string.canvas_export_all_hidden))
+                    // Only the export can be transparent: generation and
+                    // thumbnails keep the paper under the layers.
+                    val flat = doc.compositeVisible(includePaper = !transparent)
+                    scope.launch { if (host.saveToGallery(flat)) toast(str(R.string.canvas_image_saved)) }
+                }) { Text(stringResource(R.string.canvas_export)) }
+            },
+            dismissButton = { TextButton(onClick = { showExport = false }) { Text(stringResource(R.string.canvas_cancel)) } },
         )
     }
 
     nameDialog?.let { purpose ->
         ProjectNameDialog(
-            title = if (purpose == "saveQuit") "Save and quit" else "Save project",
-            initial = projectName ?: "Drawing ${java.text.SimpleDateFormat("dd-MM HH'h'mm", java.util.Locale.getDefault()).format(java.util.Date())}",
+            title = if (purpose == "saveQuit") stringResource(R.string.canvas_save_and_quit) else stringResource(R.string.canvas_save_project),
+            initial = projectName ?: stringResource(R.string.canvas_default_project_name, java.text.SimpleDateFormat("dd-MM HH'h'mm", LocalConfiguration.current.locales[0]).format(java.util.Date())),
             onConfirm = { name ->
                 nameDialog = null
                 saveProject(name, if (purpose == "saveQuit") onClose else ({}))
@@ -584,9 +628,9 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                         projectName = p.name
                         p.params?.let { host.applyParams(it) }
                         if (p.doc.width != host.width || p.doc.height != host.height) {
-                            toast("Project is ${p.doc.width}×${p.doc.height}; the model uses ${host.width}×${host.height}. Resize it from the project menu if needed")
+                            toast(str(R.string.canvas_project_size_differs, p.doc.width, p.doc.height, host.width, host.height))
                         }
-                    }.onFailure { toast("Failed to open: ${it.message}") }
+                    }.onFailure { toast(str(R.string.canvas_open_failed, it.message ?: "")) }
                 }
             },
             onDismiss = { showOpen = false },
@@ -596,21 +640,21 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
     if (confirmExit) {
         AlertDialog(
             onDismissRequest = { confirmExit = false },
-            title = { Text("Leave the canvas?") },
-            text = { Text("There are unsaved changes.") },
+            title = { Text(stringResource(R.string.canvas_leave_title)) },
+            text = { Text(stringResource(R.string.canvas_leave_text)) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmExit = false
                     save(onClose)
-                }) { Text("Save and quit") }
+                }) { Text(stringResource(R.string.canvas_save_and_quit)) }
             },
             dismissButton = {
                 Row {
-                    TextButton(onClick = { confirmExit = false }) { Text("Cancel") }
+                    TextButton(onClick = { confirmExit = false }) { Text(stringResource(R.string.canvas_cancel)) }
                     TextButton(onClick = {
                         confirmExit = false
                         onClose()
-                    }) { Text("Discard") }
+                    }) { Text(stringResource(R.string.canvas_discard)) }
                 }
             },
         )
@@ -619,22 +663,22 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
     if (confirmNew) {
         AlertDialog(
             onDismissRequest = { confirmNew = false },
-            title = { Text("New canvas?") },
-            text = { Text("Unsaved changes will be lost.") },
+            title = { Text(stringResource(R.string.canvas_new_title)) },
+            text = { Text(stringResource(R.string.canvas_new_text)) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmNew = false
                     doc = newDocument(host.width, host.height, null)
                     projectName = null
-                }) { Text("Discard and create") }
+                }) { Text(stringResource(R.string.canvas_discard_and_create)) }
             },
-            dismissButton = { TextButton(onClick = { confirmNew = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { confirmNew = false }) { Text(stringResource(R.string.canvas_cancel)) } },
         )
     }
 
     renameLayer?.let { layer ->
         ProjectNameDialog(
-            title = "Rename layer",
+            title = stringResource(R.string.canvas_rename_layer),
             initial = layer.name,
             onConfirm = {
                 layer.name = it.trim()
@@ -650,7 +694,7 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
             onDismissRequest = { showGenSettings = false },
             title = {
                 Column {
-                    Text("Generation")
+                    Text(stringResource(R.string.canvas_generation))
                     Text(host.modelName, style = MaterialTheme.typography.bodySmall)
                 }
             },
@@ -659,45 +703,45 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
                     host.promptEditor()
                     if (host.canImg2img) {
                         val d = host.denoise()
-                        LabeledSlider("Denoise strength", String.format(java.util.Locale.US, "%.2f", d), d, 0f..1f) {
+                        LabeledSlider(stringResource(R.string.canvas_denoise), String.format(java.util.Locale.US, "%.2f", d), d, 0f..1f) {
                             host.setDenoise((it * 100).roundToInt() / 100f)
                         }
                         Text(
-                            "Low keeps your drawing, high lets the AI change more.",
+                            stringResource(R.string.canvas_denoise_hint),
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
                     val b = host.batchCount()
-                    LabeledSlider("Batch count", "$b", b.toFloat(), 1f..10f) { host.setBatchCount(it.roundToInt()) }
+                    LabeledSlider(stringResource(R.string.canvas_batch_count), "$b", b.toFloat(), 1f..10f) { host.setBatchCount(it.roundToInt()) }
                     Text(
                         if (host.seedFixed()) {
-                            "A seed is set, so only one image is generated."
+                            stringResource(R.string.canvas_batch_seed_set)
                         } else {
-                            "Generates several images in a row; you pick the one to keep."
+                            stringResource(R.string.canvas_batch_hint)
                         },
                         style = MaterialTheme.typography.bodySmall,
                     )
                     OutlinedButton(onClick = {
                         showGenSettings = false
                         host.openAdvanced()
-                    }, modifier = Modifier.fillMaxWidth()) { Text("Steps, CFG, seed, sampler…") }
+                    }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.canvas_advanced_settings)) }
                     OutlinedButton(onClick = { showHistoryPicker = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Load prompt from Local Dream history")
+                        Text(stringResource(R.string.canvas_load_prompt_history))
                     }
                     OutlinedButton(onClick = { loadPromptLauncher.launch("image/png") }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Load prompt from a PNG image")
+                        Text(stringResource(R.string.canvas_load_prompt_png))
                     }
                     Text(
                         when {
-                            !host.canImg2img -> "img2img is disabled: the canvas generates from the prompt only."
-                            doc.inpaintMask != null && host.canInpaint -> "An inpaint mask is painted: only the red area will be regenerated (inpaint)."
-                            else -> "The whole drawing is sent as img2img. Empty canvas = txt2img. To regenerate only part of it, paint over it with the Inpaint mask tool (band-aid icon), or use Selection → Use as inpaint mask."
+                            !host.canImg2img -> stringResource(R.string.canvas_mode_txt2img_only)
+                            doc.inpaintMask != null && host.canInpaint -> stringResource(R.string.canvas_mode_inpaint)
+                            else -> stringResource(R.string.canvas_mode_img2img)
                         },
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
             },
-            confirmButton = { TextButton(onClick = { showGenSettings = false }) { Text("OK") } },
+            confirmButton = { TextButton(onClick = { showGenSettings = false }) { Text(stringResource(R.string.canvas_ok)) } },
         )
     }
 
@@ -706,7 +750,7 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
             onPick = { item ->
                 showHistoryPicker = false
                 host.applyPrompt(item.params.prompt, item.params.negativePrompt)
-                toast("Prompt loaded")
+                toast(str(R.string.canvas_prompt_loaded))
             },
             onDismiss = { showHistoryPicker = false },
         )
@@ -738,20 +782,17 @@ fun CanvasScreen(host: CanvasHost, initialImage: Bitmap?, onClose: () -> Unit) {
     noRoomResult?.let { bmp ->
         AlertDialog(
             onDismissRequest = { noRoomResult = null },
-            title = { Text("No free layers") },
+            title = { Text(stringResource(R.string.canvas_no_free_layers)) },
             text = {
-                Text(
-                    "The limit is ${doc.maxLayers} layers for this canvas size. " +
-                        "Merge or delete layers, or flatten everything and apply the result.",
-                )
+                Text(pluralStringResource(R.plurals.canvas_layer_limit_text, doc.maxLayers, doc.maxLayers))
             },
             confirmButton = {
                 TextButton(onClick = {
                     noRoomResult = null
                     applyResult(bmp, AcceptMode.FLATTEN)
-                }) { Text("Flatten and apply") }
+                }) { Text(stringResource(R.string.canvas_flatten_and_apply)) }
             },
-            dismissButton = { TextButton(onClick = { noRoomResult = null }) { Text("Back") } },
+            dismissButton = { TextButton(onClick = { noRoomResult = null }) { Text(stringResource(R.string.canvas_back)) } },
         )
     }
 }
@@ -836,8 +877,8 @@ private fun OptionsBar(editor: CanvasEditorState, onOpenBrush: () -> Unit, onMes
         val tool = editor.tool
         when {
             tool == CanvasTool.INPAINT -> {
-                Chip("Paint", selected = !editor.maskErase) { editor.maskErase = false }
-                Chip("Erase", selected = editor.maskErase) { editor.maskErase = true }
+                Chip(stringResource(R.string.canvas_mask_paint), selected = !editor.maskErase) { editor.maskErase = false }
+                Chip(stringResource(R.string.canvas_mask_erase), selected = editor.maskErase) { editor.maskErase = true }
                 val s = editor.settingsFor(tool)
                 Text("${s.size.roundToInt()}px", color = BarIcon, fontSize = 12.sp, modifier = Modifier.width(40.dp))
                 Slider(
@@ -847,7 +888,7 @@ private fun OptionsBar(editor: CanvasEditorState, onOpenBrush: () -> Unit, onMes
                     modifier = Modifier.weight(1f),
                     colors = SliderDefaults.colors(thumbColor = Color.White, activeTrackColor = Color(0xFFFF3B30)),
                 )
-                Chip("Clear", selected = false) {
+                Chip(stringResource(R.string.canvas_clear), selected = false) {
                     doc.inpaintMask = null
                     doc.redraw()
                 }
@@ -863,7 +904,7 @@ private fun OptionsBar(editor: CanvasEditorState, onOpenBrush: () -> Unit, onMes
                     contentAlignment = Alignment.Center,
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("CORRECTION", color = BarIcon, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.canvas_correction_label), color = BarIcon, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         Text("${editor.correction}", color = BarIcon, fontSize = 12.sp)
                     }
                 }
@@ -884,22 +925,22 @@ private fun OptionsBar(editor: CanvasEditorState, onOpenBrush: () -> Unit, onMes
                 SelectionMode.entries.forEach { m ->
                     Chip(
                         when (m) {
-                            SelectionMode.REPLACE -> "New"
-                            SelectionMode.ADD -> "Add"
-                            SelectionMode.SUBTRACT -> "Subtract"
+                            SelectionMode.REPLACE -> stringResource(R.string.canvas_sel_new)
+                            SelectionMode.ADD -> stringResource(R.string.canvas_sel_add)
+                            SelectionMode.SUBTRACT -> stringResource(R.string.canvas_sel_subtract)
                         },
                         selected = editor.selectionMode == m,
                     ) { editor.selectionMode = m }
                 }
                 Spacer(Modifier.weight(1f))
-                Chip("Deselect", selected = false) {
+                Chip(stringResource(R.string.canvas_deselect), selected = false) {
                     doc.changeSelection(null)
                     doc.redraw()
                 }
             }
 
             tool == CanvasTool.FILL -> {
-                Text("Tolerance ${editor.fillTolerance}", color = BarIcon, fontSize = 12.sp, modifier = Modifier.width(96.dp))
+                Text(stringResource(R.string.canvas_tolerance, editor.fillTolerance), color = BarIcon, fontSize = 12.sp, modifier = Modifier.width(96.dp))
                 Slider(
                     value = editor.fillTolerance.toFloat(),
                     onValueChange = { editor.fillTolerance = it.roundToInt() },
@@ -907,7 +948,7 @@ private fun OptionsBar(editor: CanvasEditorState, onOpenBrush: () -> Unit, onMes
                     valueRange = 0f..128f,
                     modifier = Modifier.weight(1f),
                 )
-                Chip("All", selected = editor.fillSampleAll) {
+                Chip(stringResource(R.string.canvas_sample_all), selected = editor.fillSampleAll) {
                     editor.fillSampleAll = !editor.fillSampleAll
                     editor.savePrefs()
                 }
@@ -915,25 +956,28 @@ private fun OptionsBar(editor: CanvasEditorState, onOpenBrush: () -> Unit, onMes
 
             tool == CanvasTool.MOVE -> {
                 Text(
-                    "Drag to move · 2 fingers: scale/rotate",
+                    stringResource(R.string.canvas_move_hint),
                     color = BarIcon,
                     fontSize = 12.sp,
+                    lineHeight = 14.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
-                IconButton(onClick = { editor.cancelTransform() }) { Icon(Icons.Default.Close, "Cancel", tint = Color(0xFFFF8A80)) }
-                IconButton(onClick = { editor.commitTransform() }) { Icon(Icons.Default.Check, "Apply", tint = Color(0xFF9CCC65)) }
+                IconButton(onClick = { editor.cancelTransform() }) { Icon(Icons.Default.Close, stringResource(R.string.canvas_cancel), tint = Color(0xFFFF8A80)) }
+                IconButton(onClick = { editor.commitTransform() }) { Icon(Icons.Default.Check, stringResource(R.string.canvas_apply), tint = Color(0xFF9CCC65)) }
             }
 
             tool == CanvasTool.HAND -> {
                 val rot = editor.rotation.roundToInt().let { if (it > 180) it - 360 else it }
-                Text("Zoom ${(editor.scale * 100).roundToInt()}%" + (if (rot != 0) " · ${rot}°" else ""), color = BarIcon, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                Text(if (rot != 0) stringResource(R.string.canvas_zoom_rotation, (editor.scale * 100).roundToInt(), rot) else stringResource(R.string.canvas_zoom, (editor.scale * 100).roundToInt()), color = BarIcon, fontSize = 12.sp, modifier = Modifier.weight(1f))
                 IconButton(onClick = { editor.refit() }) {
-                    Icon(Icons.Default.FitScreen, "Fit", tint = BarIcon)
+                    Icon(Icons.Default.FitScreen, stringResource(R.string.canvas_fit), tint = BarIcon)
                 }
             }
 
             tool == CanvasTool.EYEDROPPER -> {
-                Text("Tap the canvas to pick a color", color = BarIcon, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.canvas_eyedropper_hint), color = BarIcon, fontSize = 12.sp, lineHeight = 14.sp, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                 Box(Modifier.size(28.dp).clip(CircleShape).background(Color(editor.color)))
             }
 

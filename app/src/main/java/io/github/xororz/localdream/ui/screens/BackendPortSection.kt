@@ -1,5 +1,8 @@
 package io.github.xororz.localdream.ui.screens
 
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
+import io.github.xororz.localdream.R
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
@@ -37,6 +40,7 @@ import io.github.xororz.localdream.service.BackendService
 @Composable
 internal fun BackendPortSection() {
     val context = LocalContext.current
+    val resources = LocalResources.current
     var text by remember { mutableStateOf(BackendPort.port.toString()) }
     val value = text.toIntOrNull()
     val valid = value != null && BackendPort.isValid(value)
@@ -52,7 +56,7 @@ internal fun BackendPortSection() {
                 Intent(context, BackendService::class.java).setAction(BackendService.ACTION_STOP),
             )
         }
-        Toast.makeText(context, "Backend port set to $port", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, resources.getString(R.string.canvas_port_set, port), Toast.LENGTH_SHORT).show()
     }
 
     Column {
@@ -67,7 +71,7 @@ internal fun BackendPortSection() {
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp),
             )
-            Text("Local backend port", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.canvas_port_title), style = MaterialTheme.typography.titleMedium)
         }
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -75,10 +79,7 @@ internal fun BackendPortSection() {
         ) {
             Column(Modifier.padding(16.dp)) {
                 Text(
-                    "Port the image generation backend listens on (default ${BackendPort.DEFAULT}). " +
-                        "If the original Local Dream is also installed and running, pick another " +
-                        "port (e.g. 8091) so the two apps don't talk to each other's backend. " +
-                        "Host mode for remote devices expects ${BackendPort.DEFAULT}.",
+                    stringResource(R.string.canvas_port_hint, BackendPort.DEFAULT),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -89,15 +90,15 @@ internal fun BackendPortSection() {
                         onValueChange = { t -> text = t.filter { it.isDigit() }.take(5) },
                         singleLine = true,
                         isError = !valid,
-                        label = { Text("Port") },
+                        label = { Text(stringResource(R.string.canvas_port_label)) },
                         supportingText = if (!valid) ({ Text("1024–65535") }) else null,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f),
                     )
                     Spacer(Modifier.width(8.dp))
-                    TextButton(onClick = { value?.let(::apply) }, enabled = changed) { Text("Apply") }
+                    TextButton(onClick = { value?.let(::apply) }, enabled = changed) { Text(stringResource(R.string.canvas_apply)) }
                     if (BackendPort.port != BackendPort.DEFAULT) {
-                        TextButton(onClick = { apply(BackendPort.DEFAULT) }) { Text("Default") }
+                        TextButton(onClick = { apply(BackendPort.DEFAULT) }) { Text(stringResource(R.string.canvas_default)) }
                     }
                 }
             }

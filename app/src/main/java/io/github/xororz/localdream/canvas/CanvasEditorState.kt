@@ -41,6 +41,7 @@ class CanvasClipboard(val bitmap: Bitmap, val left: Int, val top: Int)
  * transform. Settings persist in SharedPreferences.
  */
 class CanvasEditorState(context: Context, val doc: CanvasDocument) {
+    val appContext: Context = context.applicationContext
     private val prefs = context.getSharedPreferences("canvas_prefs", Context.MODE_PRIVATE)
 
     var tool by mutableStateOf(CanvasTool.valueOf(prefs.getString("tool", CanvasTool.PEN.name) ?: CanvasTool.PEN.name))
@@ -64,6 +65,7 @@ class CanvasEditorState(context: Context, val doc: CanvasDocument) {
     var fillTolerance by mutableStateOf(prefs.getInt("fill_tolerance", 24))
     var fillSampleAll by mutableStateOf(prefs.getBoolean("fill_sample_all", true))
     var maskFeather by mutableStateOf(prefs.getFloat("mask_feather", 8f))
+    var exportTransparent by mutableStateOf(prefs.getBoolean(CanvasOptions.KEY_EXPORT_TRANSPARENT, false))
 
     // View transform: screen = rotate(doc * scale, rotation) + offset.
     var scale by mutableFloatStateOf(1f)
@@ -86,6 +88,19 @@ class CanvasEditorState(context: Context, val doc: CanvasDocument) {
     /** Shape being dragged by a selection tool, in doc coordinates. */
     var selectionDraft by mutableStateOf<android.graphics.Path?>(null)
     var draftRevision by mutableStateOf(0)
+
+    // Eyedropper options (Settings → Local Dream Canvas Options), read when
+    // the canvas opens.
+    val longPressPick = prefs.getBoolean(CanvasOptions.KEY_EYEDROPPER_LONG_PRESS, CanvasOptions.DEFAULT_LONG_PRESS)
+    val loupeEnabled = prefs.getBoolean(CanvasOptions.KEY_EYEDROPPER_LOUPE, CanvasOptions.DEFAULT_LOUPE)
+    val loupeZoom = prefs.getInt(CanvasOptions.KEY_LOUPE_ZOOM, CanvasOptions.DEFAULT_LOUPE_ZOOM).toFloat()
+
+    /** Tool to return to once the eyedropper has picked a colour. */
+    var toolBeforeEyedropper: CanvasTool = CanvasTool.PEN
+        private set
+
+    /** Where the eyedropper is sampling right now (screen coordinates), for the magnifier. */
+    var picker by mutableStateOf<Offset?>(null)
 
     /** S-Pen hover position, in screen coordinates. */
     var hover by mutableStateOf<Offset?>(null)
@@ -139,6 +154,13 @@ class CanvasEditorState(context: Context, val doc: CanvasDocument) {
 
     fun selectTool(t: CanvasTool) {
         if (transform != null && t != CanvasTool.MOVE) commitTransform()
+        if (t == CanvasTool.EYEDROPPER && tool != CanvasTool.EYEDROPPER) {
+            // Hand and transform make no sense to come back to after a pick.
+            toolBeforeEyedropper = when (tool) {
+                CanvasTool.HAND, CanvasTool.MOVE -> lastDrawTool()
+                else -> tool
+            }
+        }
         tool = t
         if (t != CanvasTool.HAND && t != CanvasTool.EYEDROPPER && t != CanvasTool.MOVE) prefs.edit { putString("tool", t.name) }
         rememberDrawTool()
@@ -168,6 +190,7 @@ class CanvasEditorState(context: Context, val doc: CanvasDocument) {
             putInt("fill_tolerance", fillTolerance)
             putBoolean("fill_sample_all", fillSampleAll)
             putFloat("mask_feather", maskFeather)
+            putBoolean(CanvasOptions.KEY_EXPORT_TRANSPARENT, exportTransparent)
         }
     }
 

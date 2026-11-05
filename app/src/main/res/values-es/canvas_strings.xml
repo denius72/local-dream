@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings: Local Dream Canvas Options -->
+    <string name="canvas_options_title">Opciones de Local Dream Canvas</string>
+    <string name="canvas_options_version">Versión del fork %1$s</string>
+    <string name="canvas_update_check">Buscar actualizaciones de este fork</string>
+    <string name="canvas_update_check_hint">Instalada: %1$s</string>
+    <string name="canvas_update_found">Versión %1$s encontrada</string>
+    <string name="canvas_update_latest">Ya tienes la versión más reciente</string>
+    <string name="canvas_update_failed">No se pudo comprobar</string>
+    <string name="canvas_opt_metadata">Guardar el prompt en los metadatos de la imagen</string>
+    <string name="canvas_opt_metadata_hint">Los PNG guardados incluyen el prompt y los ajustes (formato A1111) para poder cargarlos después. Desactívalo para imágenes sin metadatos, como en el Local Dream original.</string>
+    <string name="canvas_opt_long_press">Mantener pulsado toma el color</string>
+    <string name="canvas_opt_long_press_hint">En el canvas, deja el dedo o el lápiz quieto con una herramienta de dibujo para usar el cuentagotas; al soltar, vuelves a dibujar.</string>
+    <string name="canvas_opt_loupe">Lupa del cuentagotas</string>
+    <string name="canvas_opt_loupe_hint">Muestra una vista ampliada con una mira encima del dedo mientras tomas el color.</string>
+    <string name="canvas_opt_loupe_zoom">Zoom de la lupa</string>
+
+    <string name="canvas_port_title">Puerto del backend local</string>
+    <string name="canvas_port_hint">Puerto en el que escucha el backend de generación (por defecto %1$d). Si el Local Dream original también está instalado y en ejecución, elige otro puerto (p. ej. 8091) para que una app no hable con el backend de la otra. El modo host para dispositivos remotos espera %1$d.</string>
+    <string name="canvas_port_label">Puerto</string>
+    <string name="canvas_port_set">Puerto del backend cambiado a %1$d</string>
+
+    <!-- Tools -->
+    <string name="canvas_tool_pen">Pluma</string>
+    <string name="canvas_tool_airbrush">Aerógrafo</string>
+    <string name="canvas_tool_eraser">Goma</string>
+    <string name="canvas_tool_blur">Desenfocar</string>
+    <string name="canvas_tool_smudge">Difuminar</string>
+    <string name="canvas_tool_inpaint">Máscara de inpaint</string>
+    <string name="canvas_tool_fill">Bote de pintura</string>
+    <string name="canvas_tool_eyedropper">Cuentagotas</string>
+    <string name="canvas_tool_select_rect">Selección rectangular</string>
+    <string name="canvas_tool_lasso">Lazo</string>
+    <string name="canvas_tool_wand">Varita mágica</string>
+    <string name="canvas_tool_move">Mover / transformar</string>
+    <string name="canvas_tool_hand">Mano</string>
+
+    <!-- Top and bottom bars -->
+    <string name="canvas_undo">Deshacer</string>
+    <string name="canvas_redo">Rehacer</string>
+    <string name="canvas_generate">Generar</string>
+    <string name="canvas_generation_settings">Ajustes de generación</string>
+    <string name="canvas_menu">Menú</string>
+    <string name="canvas_selection">Selección</string>
+    <string name="canvas_transform">Transformar</string>
+    <string name="canvas_brush">Pincel</string>
+    <string name="canvas_color">Color</string>
+    <string name="canvas_layers">Capas</string>
+    <string name="canvas_color_panel">Panel de color</string>
+
+    <!-- Tool option bar -->
+    <string name="canvas_mask_paint">Pintar</string>
+    <string name="canvas_mask_erase">Borrar</string>
+    <string name="canvas_clear">Limpiar</string>
+    <string name="canvas_correction_label">CORRECCIÓN</string>
+    <string name="canvas_sel_new">Nueva</string>
+    <string name="canvas_sel_add">Añadir</string>
+    <string name="canvas_sel_subtract">Restar</string>
+    <string name="canvas_deselect">Deseleccionar</string>
+    <string name="canvas_tolerance">Tolerancia %1$d</string>
+    <string name="canvas_sample_all">Todas</string>
+    <string name="canvas_move_hint">Arrastra para mover · 2 dedos: escala/rotación</string>
+    <string name="canvas_cancel">Cancelar</string>
+    <string name="canvas_apply">Aplicar</string>
+    <string name="canvas_zoom">Zoom %1$d%%</string>
+    <string name="canvas_zoom_rotation">Zoom %1$d%% · %2$d°</string>
+    <string name="canvas_fit">Ajustar</string>
+    <string name="canvas_eyedropper_hint">Toca o arrastra para tomar el color; al soltar, vuelves a la herramienta anterior</string>
+
+    <!-- Messages -->
+    <string name="canvas_project_saved">Proyecto \"%1$s\" guardado</string>
+    <string name="canvas_save_failed">Error al guardar: %1$s</string>
+    <string name="canvas_open_failed">Error al abrir: %1$s</string>
+    <string name="canvas_generation_running">Ya hay una generación en curso</string>
+    <string name="canvas_img2img_disabled_toast">img2img está desactivado para este modelo: se genera solo a partir del prompt</string>
+    <string name="canvas_mask_ignored">Este modelo no usa máscaras; se ignoró la máscara de inpaint</string>
+    <string name="canvas_no_free_layers_toast">No quedan capas libres (%1$d): tendrás que acoplar al aceptar</string>
+    <string name="canvas_image_open_failed">No se pudo abrir la imagen</string>
+    <string name="canvas_layer_limit">Límite de capas (%1$d) alcanzado</string>
+    <string name="canvas_no_saved_prompt">Esta imagen no tiene prompt guardado</string>
+    <string name="canvas_prompt_loaded">Prompt cargado</string>
+    <string name="canvas_selection_to_mask_done">Selección copiada a la máscara de inpaint</string>
+    <string name="canvas_copied">Copiado</string>
+    <string name="canvas_nothing_copied">No hay nada copiado</string>
+    <string name="canvas_image_saved">Imagen guardada en la galería (con el prompt)</string>
+    <string name="canvas_project_size_differs">El proyecto es de %1$d×%2$d; el modelo usa %3$d×%4$d. Cambia el tamaño desde el menú del proyecto si hace falta</string>
+    <string name="canvas_layer_hidden">La capa seleccionada está oculta</string>
+    <string name="canvas_no_layer_below">No hay ninguna capa debajo</string>
+    <string name="canvas_one_layer_required">Se necesita al menos una capa</string>
+
+    <!-- Project menu -->
+    <string name="canvas_untitled_project">Proyecto sin título</string>
+    <plurals name="canvas_doc_info">
+        <item quantity="one">%1$d×%2$d · %3$d capa</item>
+        <item quantity="other">%1$d×%2$d · %3$d capas</item>
+        <item quantity="many">%1$d×%2$d · %3$d capas</item>
+    </plurals>
+    <string name="canvas_unsaved_suffix"> · sin guardar</string>
+    <string name="canvas_new_canvas">Nuevo canvas</string>
+    <string name="canvas_open_project_menu">Abrir proyecto…</string>
+    <string name="canvas_save">Guardar</string>
+    <string name="canvas_save_as">Guardar como…</string>
+    <string name="canvas_save_and_quit">Guardar y salir</string>
+    <string name="canvas_export_image">Exportar imagen a la galería</string>
+    <string name="canvas_export_title">Exportar imagen</string>
+    <string name="canvas_export_transparent">Mantener transparencia</string>
+    <string name="canvas_export_transparent_hint">Las zonas sin pintura quedan transparentes en lugar de tomar el color del papel.</string>
+    <string name="canvas_export">Exportar</string>
+    <string name="canvas_export_all_hidden">Todas las capas están ocultas: la imagen saldrá totalmente transparente</string>
+    <string name="canvas_import_layer">Importar imagen como capa</string>
+    <string name="canvas_resize_fit">Cambiar el canvas a %1$d×%2$d (encajar)</string>
+    <string name="canvas_resize_fill">Cambiar el canvas a %1$d×%2$d (rellenar, recorta los bordes)</string>
+    <string name="canvas_leave">Salir del canvas</string>
+    <string name="canvas_close">Cerrar</string>
+    <string name="canvas_save_project">Guardar proyecto</string>
+    <string name="canvas_default_project_name">Dibujo %1$s</string>
+    <string name="canvas_leave_title">¿Salir del canvas?</string>
+    <string name="canvas_leave_text">Hay cambios sin guardar.</string>
+    <string name="canvas_discard">Descartar</string>
+    <string name="canvas_new_title">¿Nuevo canvas?</string>
+    <string name="canvas_new_text">Se perderán los cambios sin guardar.</string>
+    <string name="canvas_discard_and_create">Descartar y crear</string>
+    <string name="canvas_rename_layer">Renombrar capa</string>
+
+    <!-- Generation settings -->
+    <string name="canvas_generation">Generación</string>
+    <string name="canvas_denoise">Denoise strength</string>
+    <string name="canvas_denoise_hint">Bajo conserva tu dibujo, alto deja que la IA cambie más.</string>
+    <string name="canvas_batch_count">Cantidad</string>
+    <string name="canvas_batch_seed_set">Hay una seed fijada, así que solo se genera una imagen.</string>
+    <string name="canvas_batch_hint">Genera varias imágenes seguidas; tú eliges con cuál quedarte.</string>
+    <string name="canvas_advanced_settings">Steps, CFG, seed, sampler…</string>
+    <string name="canvas_load_prompt_history">Cargar prompt del historial de Local Dream</string>
+    <string name="canvas_load_prompt_png">Cargar prompt de una imagen PNG</string>
+    <string name="canvas_mode_txt2img_only">img2img está desactivado: el canvas genera solo a partir del prompt.</string>
+    <string name="canvas_mode_inpaint">Hay una máscara de inpaint pintada: solo se volverá a generar la zona roja (inpaint).</string>
+    <string name="canvas_mode_img2img">Todo el dibujo se envía como img2img. Canvas vacío = txt2img. Para volver a generar solo una parte, píntala con la herramienta Máscara de inpaint (icono de tirita) o usa Selección → Usar como máscara de inpaint.</string>
+    <string name="canvas_ok">OK</string>
+    <string name="canvas_no_free_layers">No quedan capas libres</string>
+    <plurals name="canvas_layer_limit_text">
+        <item quantity="one">El límite es de %1$d capa para este tamaño de canvas. Combina o elimina capas, o acopla todo y aplica el resultado.</item>
+        <item quantity="other">El límite es de %1$d capas para este tamaño de canvas. Combina o elimina capas, o acopla todo y aplica el resultado.</item>
+        <item quantity="many">El límite es de %1$d capas para este tamaño de canvas. Combina o elimina capas, o acopla todo y aplica el resultado.</item>
+    </plurals>
+    <string name="canvas_flatten_and_apply">Acoplar y aplicar</string>
+    <string name="canvas_back">Atrás</string>
+
+    <!-- Brush settings -->
+    <string name="canvas_tool_settings">Ajustes: %1$s</string>
+    <string name="canvas_size">Tamaño</string>
+    <string name="canvas_inpaint_hint">Pinta la zona que la IA debe redibujar (se ve en rojo). Luego el botón mágico hace inpaint en ella.</string>
+    <string name="canvas_mask_feather">Suavizado del borde de la máscara</string>
+    <string name="canvas_opacity">Opacidad</string>
+    <string name="canvas_hardness">Dureza</string>
+    <string name="canvas_flow">Flujo</string>
+    <string name="canvas_strength">Intensidad</string>
+    <string name="canvas_spacing">Espaciado</string>
+    <string name="canvas_pressure_size">Presión → tamaño</string>
+    <string name="canvas_min_size">Tamaño mínimo</string>
+    <string name="canvas_pressure_opacity">Presión → opacidad</string>
+    <string name="canvas_section_canvas">Canvas</string>
+    <string name="canvas_correction">Corrección (estabilizador)</string>
+    <string name="canvas_use_pen_pressure">Usar la presión del S Pen</string>
+    <string name="canvas_stylus_only">Solo el S Pen dibuja (los dedos mueven la vista)</string>
+    <string name="canvas_default">Predeterminado</string>
+
+    <!-- Generate hint -->
+    <string name="canvas_hint_title">Antes de generar</string>
+    <string name="canvas_hint_text">¡No olvides revisar primero el prompt y los ajustes del modelo! Están detrás del engranaje, justo al lado del botón mágico.</string>
+    <string name="canvas_hint_image_desc">El botón del engranaje al lado del botón mágico</string>
+    <string name="canvas_dont_show_again">No volver a mostrar</string>
+
+    <!-- Color picker -->
+    <string name="canvas_recent">Recientes</string>
+
+    <!-- Selection menu -->
+    <string name="canvas_selection_mode">Modo de la herramienta de selección</string>
+    <string name="canvas_select_all">Seleccionar todo</string>
+    <string name="canvas_invert_selection">Invertir selección</string>
+    <string name="canvas_use_as_mask">Usar como máscara de inpaint</string>
+    <string name="canvas_cut">Cortar</string>
+    <string name="canvas_copy">Copiar</string>
+    <string name="canvas_paste">Pegar (nueva capa)</string>
+    <string name="canvas_clear_contents">Borrar el contenido</string>
+    <string name="canvas_wand_tolerance">Tolerancia de la varita mágica</string>
+    <string name="canvas_fill_tolerance">Tolerancia del bote de pintura</string>
+    <string name="canvas_fill_sample_all">El bote de pintura usa todas las capas</string>
+    <string name="canvas_mask_feather_ai">Suavizado del borde de la máscara (IA)</string>
+
+    <!-- Projects -->
+    <string name="canvas_name">Nombre</string>
+    <string name="canvas_open_project">Abrir proyecto</string>
+    <string name="canvas_no_projects">Todavía no hay proyectos guardados.</string>
+    <string name="canvas_delete">Eliminar</string>
+    <string name="canvas_delete_project_title">¿Eliminar \"%1$s\"?</string>
+    <string name="canvas_delete_project_text">Se eliminará el proyecto. Las imágenes que ya están en el historial no se ven afectadas.</string>
+
+    <!-- AI result screen -->
+    <string name="canvas_your_drawing">Tu dibujo</string>
+    <string name="canvas_preparing">Preparando…</string>
+    <string name="canvas_image_n_of">Imagen %1$d de %2$d</string>
+    <string name="canvas_result_n">Resultado %1$d</string>
+    <string name="canvas_pick_hint">%1$d / %2$d: toca una miniatura para elegir</string>
+    <string name="canvas_on_accept">Al aceptar:</string>
+    <string name="canvas_new_layer">Nueva capa</string>
+    <string name="canvas_flatten">Acoplar</string>
+    <string name="canvas_reject">Rechazar</string>
+    <string name="canvas_accept">Aceptar</string>
+    <string name="canvas_back_to_canvas">Volver al canvas</string>
+    <plurals name="canvas_stop_and_pick">
+        <item quantity="one">Parar y elegir entre %1$d</item>
+        <item quantity="other">Parar y elegir entre %1$d</item>
+        <item quantity="many">Parar y elegir entre %1$d</item>
+    </plurals>
+    <string name="canvas_cancel_generation">Cancelar generación</string>
+
+    <!-- Aspect ratio dialog -->
+    <string name="canvas_aspect_title">Relación de aspecto distinta</string>
+    <string name="canvas_aspect_text">El canvas es de %1$d×%2$d, pero el modelo genera %3$d×%4$d. Generar así estira el dibujo y el resultado.</string>
+    <string name="canvas_aspect_fit">Cambiar el canvas: encajar (conserva todo, añade márgenes)</string>
+    <string name="canvas_aspect_fill">Cambiar el canvas: rellenar (recorta los bordes)</string>
+    <string name="canvas_aspect_anyway">Generar igualmente (estirado)</string>
+
+    <!-- Layers panel -->
+    <string name="canvas_duplicate">Duplicar</string>
+    <string name="canvas_merge_down">Combinar con la de abajo</string>
+    <string name="canvas_move_up">Subir</string>
+    <string name="canvas_move_down">Bajar</string>
+    <string name="canvas_layer_opacity">Opacidad %1$d%%</string>
+    <plurals name="canvas_layer_count">
+        <item quantity="one">%1$d/%2$d capa</item>
+        <item quantity="other">%1$d/%2$d capas</item>
+        <item quantity="many">%1$d/%2$d capas</item>
+    </plurals>
+    <string name="canvas_visibility">Visibilidad</string>
+
+    <!-- History prompt picker -->
+    <string name="canvas_history_title">Cargar prompt del historial</string>
+    <string name="canvas_history_empty">El historial está vacío.</string>
+    <string name="canvas_no_prompt">(sin prompt)</string>
+</resources>

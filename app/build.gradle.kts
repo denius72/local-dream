@@ -34,8 +34,14 @@ android {
         minSdk = 28
 //        minSdk = 31
         targetSdk = 36
-        versionCode = 74
-        versionName = "3.0.0-alpha.7"
+        // Fork versioning: versionCode = upstream code * 100 + canvas release,
+        // so it always grows (also when upstream bumps its own code). The
+        // in-app update check compares it with the number in the APK name.
+        val upstreamVersionCode = 74
+        val upstreamVersionName = "3.0.0-alpha.7"
+        val canvasRelease = 12
+        versionCode = upstreamVersionCode * 100 + canvasRelease
+        versionName = "$upstreamVersionName-canvas.$canvasRelease"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -115,8 +121,9 @@ androidComponents {
     onVariants { variant ->
         variant.outputs.forEach { output ->
             val versionName = output.versionName.orNull
+            val versionCode = output.versionCode.orNull
             if (output is com.android.build.api.variant.impl.VariantOutputImpl) {
-                output.outputFileName.set("LocalDreamCanvas_armv8a_$versionName.apk")
+                output.outputFileName.set("LocalDreamCanvas_armv8a_${versionName}_$versionCode.apk")
             }
         }
     }

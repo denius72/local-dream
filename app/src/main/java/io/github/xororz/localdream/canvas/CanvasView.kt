@@ -1,5 +1,7 @@
 package io.github.xororz.localdream.canvas
 
+import kotlin.math.floor
+import io.github.xororz.localdream.R
 import android.graphics.DashPathEffect
 import android.graphics.Paint
 import android.graphics.Path
@@ -36,6 +38,7 @@ private const val ABORT_WINDOW_MS = 280L
 private const val TAP_MAX_MS = 320L
 private const val ROTATE_START_DEG = 12f
 private const val ROTATE_SNAP_DEG = 6f
+private const val LONG_PRESS_MS = 450L
 
 @Composable
 fun CanvasView(
@@ -83,7 +86,7 @@ fun CanvasView(
                     val start = down.uptimeMillis
                     var maxPointers = 1
                     var travelled = 0f
-                    val action: ToolAction? = if (mode == GestureMode.TOOL) {
+                    var action: ToolAction? = if (mode == GestureMode.TOOL) {
                         ToolAction.start(editor, tool, down, isPen, onMessage)
                     } else {
                         null
@@ -95,9 +98,34 @@ fun CanvasView(
                     var twist = 0f
                     var rotating = false
                     var lastCentroid = Offset.Unspecified
+                    // Holding still on a drawing tool turns into the eyedropper.
+                    var longPressPending = mode == GestureMode.TOOL && action != null && editor.longPressPick &&
+                        (tool == CanvasTool.FILL || (tool.isBrush && tool != CanvasTool.INPAINT))
+                    var lastDown = down
 
                     while (true) {
-                        val event = awaitPointerEvent()
+                        val wait = start + LONG_PRESS_MS - android.os.SystemClock.uptimeMillis()
+                        val next = when {
+                            !longPressPending -> awaitPointerEvent()
+                            wait > 0 -> withTimeoutOrNull(wait) { awaitPointerEvent() }
+                            else -> null
+                        }
+                        if (next == null) {
+                            // Held long enough: drop the stroke that already
+                            // started and pick a colour instead.
+                            longPressPending = false
+                            action?.cancel()
+                            editor.selectTool(CanvasTool.EYEDROPPER)
+                            action = ToolAction.start(editor, CanvasTool.EYEDROPPER, lastDown, isPen, onMessage)
+                            continue
+                        }
+                        val event = next
+                        if (longPressPending) {
+                            val ch = event.changes.firstOrNull { it.id == down.id }
+                            if (ch != null) lastDown = ch
+                            val moved = ch != null && (ch.position - down.position).getDistance() > viewConfiguration.touchSlop
+                            if (moved || event.changes.count { it.pressed } != 1) longPressPending = false
+                        }
                         val pressed = event.changes.count { it.pressed }
                         lastTime = event.changes.maxOf { it.uptimeMillis }
                         if (pressed == 0) {
@@ -178,6 +206,8 @@ fun CanvasView(
         val selection = doc.selection
         val inpaintMask = doc.inpaintMask
         val hover = editor.hover
+        val picker = editor.picker
+        val pickedColor = editor.color
 
         drawIntoCanvas { cc ->
             val c = cc.nativeCanvas
@@ -258,11 +288,98 @@ fun CanvasView(
                 c.drawCircle(hover.x, hover.y, radius, paints.cursorWhite)
                 c.drawCircle(hover.x, hover.y, radius, paints.cursorBlack)
             }
+
+            if (picker != null) {
+                drawPickerLoupe(c, editor, paints, picker, pickedColor, size.width, size.height, density)
+            }
         }
     }
 }
 
+/**
+ * Eyedropper magnifier: a zoomed circle above the finger with a crosshair on
+ * the sampled pixel and a ring of the picked colour. It draws only the paper
+ * and the visible layers, which is exactly what [CanvasDocument.sampleColor]
+ * reads. With the magnifier off, only the colour ring is shown.
+ */
+private fun drawPickerLoupe(
+    c: android.graphics.Canvas,
+    editor: CanvasEditorState,
+    paints: CanvasPaints,
+    p: Offset,
+    color: Int,
+    viewW: Float,
+    viewH: Float,
+    density: Float,
+) {
+    val doc = editor.doc
+    val loupe = editor.loupeEnabled
+    val r = (if (loupe) 56f else 26f) * density
+    val gap = 36f * density
+    // Above the finger; below it when there is no room at the top.
+    var cy = p.y - gap - r
+    if (cy - r < 0f) cy = p.y + gap + r
+    cy = cy.coerceIn(r, max(r, viewH - r))
+    val cx = p.x.coerceIn(r, max(r, viewW - r))
+    val ring = 7f * density
+
+    if (loupe) {
+        val zoom = editor.loupeZoom
+        val clip = Path().apply { addCircle(cx, cy, r, Path.Direction.CW) }
+        c.save()
+        c.clipPath(clip)
+        c.drawColor(0xFF3A3A3A.toInt())
+        // Same view transform as the canvas, magnified around the touch point.
+        c.translate(cx, cy)
+        c.scale(zoom, zoom)
+        c.translate(-p.x, -p.y)
+        c.translate(editor.offset.x, editor.offset.y)
+        c.rotate(editor.rotation)
+        c.scale(editor.scale, editor.scale)
+        paints.paper.color = doc.paperColor
+        c.drawRect(0f, 0f, doc.width.toFloat(), doc.height.toFloat(), paints.paper)
+        paints.loupeLayer.isFilterBitmap = false
+        for (layer in doc.layers) {
+            if (!layer.visible) continue
+            paints.loupeLayer.alpha = (layer.opacity * 255).toInt()
+            c.drawBitmap(layer.bitmap, 0f, 0f, paints.loupeLayer)
+        }
+        c.restore()
+
+        // Crosshair with a gap in the middle so the pixel itself stays visible.
+        val arm = 12f * density
+        val hole = 4f * density
+        paints.loupeCross.strokeWidth = 3f * density
+        paints.loupeCross.color = android.graphics.Color.WHITE
+        repeat(2) { pass ->
+            c.drawLine(cx - hole - arm, cy, cx - hole, cy, paints.loupeCross)
+            c.drawLine(cx + hole, cy, cx + hole + arm, cy, paints.loupeCross)
+            c.drawLine(cx, cy - hole - arm, cx, cy - hole, paints.loupeCross)
+            c.drawLine(cx, cy + hole, cx, cy + hole + arm, paints.loupeCross)
+            if (pass == 0) {
+                paints.loupeCross.strokeWidth = 1.2f * density
+                paints.loupeCross.color = android.graphics.Color.BLACK
+            }
+        }
+    }
+
+    // Ring of the picked colour, with white and black edges for any background.
+    paints.loupeRing.strokeWidth = ring
+    paints.loupeRing.color = color
+    c.drawCircle(cx, cy, r + ring / 2f, paints.loupeRing)
+    paints.antsWhite.strokeWidth = 2f * density
+    paints.antsWhite.pathEffect = null
+    c.drawCircle(cx, cy, r + ring + density, paints.antsWhite)
+    paints.antsBlack.strokeWidth = 1f * density
+    paints.antsBlack.pathEffect = null
+    c.drawCircle(cx, cy, r + ring + 2.5f * density, paints.antsBlack)
+    c.drawCircle(cx, cy, r, paints.antsBlack)
+}
+
 private class CanvasPaints {
+    val loupeLayer = Paint()
+    val loupeCross = Paint().apply { style = Paint.Style.STROKE }
+    val loupeRing = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     val paper = Paint()
     val layer = Paint(Paint.FILTER_BITMAP_FLAG)
     val saveLayer = Paint()
@@ -313,7 +430,7 @@ private abstract class ToolAction {
             val layer = doc.activeLayer
             val needsVisibleLayer = (tool.isBrush && tool != CanvasTool.INPAINT) || tool == CanvasTool.FILL || tool == CanvasTool.MOVE
             if (needsVisibleLayer && (layer == null || !layer.visible)) {
-                onMessage("The selected layer is hidden")
+                onMessage(editor.appContext.getString(R.string.canvas_layer_hidden))
                 return null
             }
             return when (tool) {
@@ -422,7 +539,8 @@ private class EyedropperAction(private val editor: CanvasEditorState, down: Poin
 
     private fun pick(p: Offset) {
         val d = editor.screenToDoc(p)
-        editor.pickColor(editor.doc.sampleColor(d.x.toInt(), d.y.toInt()))
+        editor.pickColor(editor.doc.sampleColor(floor(d.x).toInt(), floor(d.y).toInt()))
+        editor.picker = p
     }
 
     override fun update(event: PointerEvent, down: PointerInputChange) {
@@ -430,8 +548,15 @@ private class EyedropperAction(private val editor: CanvasEditorState, down: Poin
         changes.firstOrNull { it.id == down.id }?.let { pick(it.position) }
     }
 
-    override fun end(change: PointerInputChange) = Unit
-    override fun cancel() = Unit
+    /** Pick once and go back to the tool from before, like desktop apps. */
+    override fun end(change: PointerInputChange) {
+        editor.picker = null
+        editor.selectTool(editor.toolBeforeEyedropper)
+    }
+
+    override fun cancel() {
+        editor.picker = null
+    }
 }
 
 private class TapAction(down: PointerInputChange, private val onTap: (Offset) -> Unit) : ToolAction() {

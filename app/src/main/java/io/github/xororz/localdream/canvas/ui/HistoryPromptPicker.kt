@@ -1,5 +1,7 @@
 package io.github.xororz.localdream.canvas.ui
 
+import androidx.compose.ui.res.stringResource
+import io.github.xororz.localdream.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,15 +46,16 @@ internal fun HistoryPromptPicker(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
+    val noPrompt = stringResource(R.string.canvas_no_prompt)
     val historyManager = remember { HistoryManager(context) }
     val items = remember { historyManager.pager(HistoryFilter()) }.collectAsLazyPagingItems()
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Load prompt from history") },
+        title = { Text(stringResource(R.string.canvas_history_title)) },
         text = {
             if (items.itemCount == 0) {
-                Text("The history is empty.")
+                Text(stringResource(R.string.canvas_history_empty))
             } else {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
@@ -79,7 +82,7 @@ internal fun HistoryPromptPicker(
                                 )
                             }
                             Text(
-                                item.params.prompt.ifBlank { "(no prompt)" },
+                                item.params.prompt.ifBlank { noPrompt },
                                 style = MaterialTheme.typography.labelSmall,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
@@ -90,6 +93,6 @@ internal fun HistoryPromptPicker(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.canvas_cancel)) } },
     )
 }
