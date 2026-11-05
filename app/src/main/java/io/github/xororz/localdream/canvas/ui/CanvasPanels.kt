@@ -188,22 +188,34 @@ private fun DragValue(text: String, onDrag: (Float) -> Unit, onClick: () -> Unit
         modifier = Modifier
             .fillMaxWidth()
             .pointerInput(Unit) {
-                // Distance-based, like MediBang: moving away from where the
-                // finger went down raises the value in any direction, moving
-                // back toward it lowers it. onDrag takes a dy-style delta
-                // (negative = increase).
+                // Like MediBang: moving away from where the finger went down
+                // raises the value in any direction, moving back toward it
+                // lowers it, and going past that point keeps lowering it.
+                // While the finger is on the outward side the axis follows it
+                // (pure distance); past the origin the axis stays put, so the
+                // projection turns negative instead of growing again.
+                // onDrag takes a dy-style delta (negative = increase).
                 var origin = Offset.Zero
-                var lastDist = 0f
+                var axis = Offset.Zero
+                var lastS = 0f
                 detectDragGestures(
                     onDragStart = { p ->
                         origin = p
-                        lastDist = 0f
+                        axis = Offset.Zero
+                        lastS = 0f
                     },
                 ) { change, _ ->
                     change.consume()
-                    val dist = (change.position - origin).getDistance()
-                    drag(-(dist - lastDist))
-                    lastDist = dist
+                    val v = change.position - origin
+                    val len = v.getDistance()
+                    if (axis == Offset.Zero && len > 0f) axis = v / len
+                    var s = v.x * axis.x + v.y * axis.y
+                    if (s > 0f && len > 0f) {
+                        axis = v / len
+                        s = len
+                    }
+                    drag(-(s - lastS))
+                    lastS = s
                 }
             }
             .pointerInput(Unit) { detectTapGestures { click() } }
